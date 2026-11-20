@@ -1,8 +1,11 @@
-# Gacha Wheel visual source
+# The approved original roulette GIFs
 
-- `ornate-wheel.svg` — committed text-only **vector reconstruction** based on the six rarity palette and user-supplied dark-romance reference. Transparent outside the circular dial; stationary golden pointer is applied by `scripts/ornate_wheel.py` after rotating the dial.
-- The six **original** user-generated GIFs are not yet in GitHub because the GitHub connector cannot upload mounted local binary assets directly. The SVG fallback is a usable visually related but **not pixel-identical** illustration. Never call it the six original GIFs.
-- Once available, place *all six* GIFs under `assets/roulette/original_gifs/`: `gacha_classic.gif`, `gacha_elite.gif`, `gacha_royal.gif`, `gacha_epic.gif`, `gacha_mythic.gif`, `gacha_eternal.gif`. The renderer switches to them automatically only if the complete set exists, avoiding mixed artwork.
-- Server-side chance weights stay **25/22/19/16/11/7**, regardless of equal visual sector size. The selection is never decided by the GIF.
-- Timing: spinner animation ~5.94 sec; separate Telegram reveal after 7.5 sec, never the caption.
-- No real cards/ledgers/rewards in this test.
+These six GIFs are the **exact, user-approved transparent animations**, imported from `Gacha_six_rarities_transparent_GIF.zip` on 2026-11-20. There are no generated substitute GIFs during Telegram delivery.
+
+All files are 450×450, 64 frames, ~5.94 seconds; one per rarity: Classic 25%, Elite 22%, Royal 19%, Epic 16%, Mythic 11%, Eternal 7%. Rarity is selected by the server, **not** by visual sector size.
+
+Files and exact SHA256 values are embedded in `scripts/ornate_wheel.py` and verified by CI. The old `ornate-wheel.svg` is an inactive design reference and is never used by this bot.
+
+If any original asset is missing or modified, animation delivery fails closed rather than silently replacing the original with an SVG. The animation caption remains neutral, then the chosen rarity is revealed after the timed delay.
+
+Since Telegram has no reliable client playback-completion callback, the 7.5-second reveal delay starts after `sendAnimation` returns; some clients may begin playback later.
