@@ -3,9 +3,13 @@
 - Owner: https://github.com/Stellmaria/Gacha/issues/1
 - Исходная ветка: main, commit `afc3e2c3ff7c7603bf6d6da67d0582a93e5ce34f`
 - Рабочая ветка: `feat/issue-1-wheel-prototype`
-- Статус: прототип, не production.
-- Цель: визуально проверить два независимых колеса и алгоритм попадания стрелки в сервером заранее определённый сектор.
-- Ограничения: только GitHub Actions; без приватных хостов, секретов, платежей, выдачи карт и Telegram-вызовов.
+- PR: https://github.com/Stellmaria/Gacha/pull/2 (draft)
+- Статус: код прототипа создан, CI пройден на первом SHA, UI/Telegram live-приёмка ожидается; не production.
+- Цель: проверить два независимых колеса, распределение вероятностей и геометрически точное попадание стрелки в **локально выбранный демо-сектор**. Подключения сервера пока нет.
+- Реализовано: автономный SVG интерфейс, CSS вращение, призовые веса 20/20/15/15/10/10/5/5, карточные веса 25/22/19/16/11/7, unit-тесты, CI, технический контракт и backlog.
+- Валюта: **вельветы**. Никаких ₽, VL, AVL.
+- Ограничения: только GitHub-hosted Actions; без приватных хостов, секретов, платежей, реальной выдачи карт и Telegram-вызовов.
 - Риск: Telegram HTML Widgets могут быть недоступны в production; браузерное демо не является Telegram-live приёмкой.
-- Приёмка: unit + syntax checks на GitHub-hosted runner, отдельно требуется UI-проверка и возможность интеграции с Bot API.
-- PR: pending.
+- CI evidence: SHA `35a664e0c8d22e592ee71102507a88f082c1d828`, push run https://github.com/Stellmaria/Gacha/actions/runs/44786934827 SUCCESS, PR run https://github.com/Stellmaria/Gacha/actions/runs/44786938689 SUCCESS. Unit checks, module syntax, static entry passed.
+- Осталось: финальный CI на обновлённом SHA; осмотр UI в настоящем браузере; согласование связки двух колёс; Telegram Bot API availability и live-приёмка в отдельной задаче.
+- Merge/deploy: не выполнялись.
