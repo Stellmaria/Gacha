@@ -6,11 +6,11 @@ the original assets take priority and the renderer is not used.
 """
 from __future__ import annotations
 
+import hashlib
 import io
-import math
 from pathlib import Path
 
-from scripts.wheel_gif import NAMES, WEIGHTS
+from scripts.wheel_gif import NAMES
 
 ART_CENTERS = (330, 30, 90, 150, 210, 270)
 SOURCE = Path(__file__).resolve().parents[1] / "assets" / "roulette" / "ornate-wheel.svg"
@@ -32,82 +32,45 @@ def art_index_at_pointer(angle: float) -> int:
     return distances.index(min(distances))
 
 
-def _index_frame(frame):
-    """Reserve palette index 0 for transparent pixels in every GIF frame."""
-    from PIL import Image
-    rgb = frame.convert("RGB").quantize(colors=255, method=Image.Quantize.MEDIANCUT,
-                                         dither=Image.Dither.NONE)
-    colors = rgb.getpalette()[:765]
-    pal = Image.frombytes("P", frame.size, bytes(
-        0 if alpha < 100 else min(255, idx + 1)
-        for idx, alpha in zip(rgb.tobytes(), frame.getchannel("A").tobytes())
-    ))
-    pal.putpalette([0, 0, 0] + colors)
-    pal.info["transparency"] = 0
-    return pal
-
-
-def _pointer(frame):
-    from PIL import ImageDraw
-    side = frame.width
-    scale = side / 450
-    cx = side // 2
-    draw = ImageDraw.Draw(frame)
-    pts = [(cx - 16 * scale, 10 * scale), (cx + 16 * scale, 10 * scale),
-           (cx, 58 * scale)]
-    draw.polygon(pts, fill="#f8d5a7")
-    draw.line(pts + [pts[0]], fill="#704451", width=max(1, int(2 * scale)))
-    gem = [(cx, 16 * scale), (cx + 8 * scale, 24 * scale),
-           (cx, 42 * scale), (cx - 8 * scale, 24 * scale)]
-    draw.polygon(gem, fill="#b41a42")
-    draw.line(gem + [gem[0]], fill="#ffe8ca", width=max(1, int(2 * scale)))
-    draw.ellipse((cx-2*scale, 21*scale, cx+2*scale, 25*scale), fill="#fff8df")
+# Exact hashes of the user-approved animations, not regenerated substitutes.
+ORIGINAL_SHA256 = {
+    'gacha_classic.gif': '1568f16b5312dd7e5d907a549e33f02b38ac67b70da55017d3afd3a56b028e69',
+    'gacha_elite.gif': 'ff586776a7ac15034dbcce5ad244c9e9e50a03238e5b0260561c53ddf7ceef8e',
+    'gacha_royal.gif': 'b4aec0f6b53ea77196ff46c5561fc4bcc9c206239bef37f11105b4227a033c5c',
+    'gacha_epic.gif': 'b84086327c34830dff102a268ab049fe94440e65b6fa8c7a2b56da2cd7358ba1',
+    'gacha_mythic.gif': 'cb15204926d6830e7f41be262f8f3d4466a655e6503373ae886d2690216efe66',
+    'gacha_eternal.gif': '530600e3f72f52e85d315608891c94374fcd0ead956e2abe5cb6e8c1b80d988c',
+}
 
 
 def original_gifs_complete() -> bool:
     return all((ORIGINAL_DIR / name).is_file() for name in FILE_NAMES)
 
 
-def render_ornate_gif(index: int, *, size: int = 360, frames: int = 64) -> tuple[bytes, float]:
-    """Return GIF bytes and playback duration, never the winning rarity in a caption."""
+def render_ornate_gif(index: int, *, size: int = 450, frames: int = 64) -> tuple[bytes, float]:
+    """Return the original user-approved GIF bytes. Never silently render SVG art."""
     art_target_angle(index)
-    if not 220 <= size <= 600 or not 32 <= frames <= 90:
-        raise ValueError("Unsupported animation dimensions.")
+    if (size, frames) != (450, 64):
+        raise ValueError("Original assets are fixed at 450x450 and 64 frames.")
+    path = ORIGINAL_DIR / FILE_NAMES[index]
+    data = path.read_bytes()  # fail closed: no wrong visual if an asset is missing
+    if not data.startswith(b"GIF89a") or len(data) >= 8_000_000:
+        raise ValueError("Approved GIF is invalid or exceeds demo size cap.")
+    if hashlib.sha256(data).hexdigest() != ORIGINAL_SHA256[path.name]:
+        raise ValueError("GIF differs from the approved original asset.")
     from PIL import Image
-    if original_gifs_complete():
-        file = ORIGINAL_DIR / FILE_NAMES[index]
-        data = file.read_bytes()
-        with Image.open(io.BytesIO(data)) as gif:
-            if gif.format != "GIF" or gif.n_frames < 32:
-                raise ValueError("Original rarity GIF is invalid.")
-            duration = sum(
-                gif.seek(n) or gif.info.get("duration", 0) for n in range(gif.n_frames)
-            ) / 1000
-        if not 4 <= duration <= 12 or len(data) > 8_000_000:
-            raise ValueError("Original GIF failed safety limits.")
-        return data, duration
-
-    import cairosvg
-    image_data = cairosvg.svg2png(bytestring=SOURCE.read_bytes(), output_width=size, output_height=size)
-    disk = Image.open(io.BytesIO(image_data)).convert("RGBA")
-    all_frames = []
-    end_angle = art_target_angle(index)
-    for n in range(frames):
-        t = n / (frames - 1)
-        fraction = 1.0 - (1.0 - t) ** 4
-        canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-        canvas.alpha_composite(disk.rotate(-end_angle * fraction,
-                                         resample=Image.Resampling.BICUBIC))
-        _pointer(canvas)
-        all_frames.append(_index_frame(canvas))
-    # Exactly 5.94 sec for 64 frames (63 x 80ms + 900ms final hold).
-    regular = (SPIN_MS - 900) // (frames - 1)
-    timings = [regular] * (frames - 1)
-    timings.append(SPIN_MS - regular * (frames - 1))
-    result = io.BytesIO()
-    all_frames[0].save(result, format="GIF", save_all=True, append_images=all_frames[1:],
-                       duration=timings, loop=0, transparency=0, disposal=2, optimize=False)
-    data = result.getvalue()
-    if not data.startswith(b"GIF89a") or len(data) > 8_000_000:
-        raise ValueError("Generated GIF exceeds Telegram demo safety limits.")
-    return data, sum(timings) / 1000
+    with Image.open(io.BytesIO(data)) as gif:
+        if gif.format != "GIF" or gif.size != (450, 450) or gif.n_frames != 64:
+            raise ValueError("Approved GIF geometry/frame count is invalid.")
+        duration_ms = 0
+        for n in range(gif.n_frames):
+            gif.seek(n)
+            duration_ms += gif.info.get("duration", 0)
+        for n in (0, gif.n_frames - 1):
+            gif.seek(n)
+            if gif.convert("RGBA").getpixel((0, 0))[3] != 0:
+                raise ValueError("Approved GIF must have a transparent background.")
+    duration = duration_ms / 1000
+    if not 5.5 <= duration <= 6.5:
+        raise ValueError("Approved GIF duration is outside the expected window.")
+    return data, duration

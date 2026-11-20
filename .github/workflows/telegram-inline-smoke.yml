@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install isolated GIF renderer
-        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 CairoSVG==2.8.2
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
       - name: Render unit smoke before calling Telegram
         run: python -m unittest tests_python.test_wheel_gif tests_python.test_ornate_wheel -v
       - name: Run single inline demo on the existing test-purpose bot (ordinary Bot API)
