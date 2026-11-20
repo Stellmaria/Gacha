@@ -54,6 +54,9 @@ python -m http.server 8000
 
 ## Тестирование Telegram
 
+Новый fallback для **обычного** Telegram-бота: inline-кнопка, реальная GIF-анимация остановки на одной из шести редкостей, только ручной GitHub Actions smoke без начислений. [Порядок запуска](docs/TELEGRAM_INLINE_FALLBACK.md). Для этого нужен `GACHA_BOT_TOKEN`, а не `GACHA_TEST_BOT_TOKEN`.
+
+
 GitHub CI проверяет только код и логику, **не работу Telegram-клиента**. Для Widgets нужно отдельное тестовое окружение Telegram и тестовый бот; для публичного бота готовим fallback с inline-кнопкой и анимацией. [План тестирования](docs/TELEGRAM_TEST_PLAN.md).
 
 ## Проверки

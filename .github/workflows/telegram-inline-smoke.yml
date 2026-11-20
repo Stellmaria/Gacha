@@ -1,0 +1,33 @@
+name: Telegram wheel fallback — MANUAL DEMO
+
+# Explicit manual-only test. This workflow has access to a bot secret.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gacha-ordinary-bot-inline-demo
+  cancel-in-progress: false
+
+jobs:
+  fallback-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated GIF renderer
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Render unit smoke before calling Telegram
+        run: python -m unittest tests_python.test_wheel_gif -v
+      - name: Run one ordinary-bot inline-wheel smoke
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_BOT_TOKEN }}
+        run: python -m scripts.telegram_inline_smoke
