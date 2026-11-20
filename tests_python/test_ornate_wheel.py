@@ -16,6 +16,20 @@ class OrnateWheelTests(unittest.TestCase):
     def test_animation_delay_is_longer_than_playback(self):
         self.assertGreater(REVEAL_DELAY_SECONDS, 5.94)
 
+    def test_full_size_manual_workflow_animation(self):
+        try:
+            from PIL import Image
+            import cairosvg
+        except ImportError:
+            self.skipTest("Rendering dependencies provided in gif-render-test")
+        data, duration = render_ornate_gif(5)
+        self.assertTrue(data.startswith(b"GIF89a"))
+        self.assertLess(len(data), 8_000_000)
+        self.assertAlmostEqual(duration, 5.94, places=2)
+        image = Image.open(io.BytesIO(data))
+        self.assertGreaterEqual(image.n_frames, 45)
+        self.assertEqual(image.size, (360, 360))
+
     def test_invalid_index_is_rejected(self):
         for i in (-1, 6, 10):
             with self.assertRaises(ValueError):
