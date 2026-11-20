@@ -1,0 +1,26 @@
+name: Telegram Widget smoke (TEST ONLY)
+
+# Never triggered by code changes, PRs, or schedules.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gacha-widget-test-server
+  cancel-in-progress: false
+
+jobs:
+  widget-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Send one demo widget to the private test-server /wheel chat
+        env:
+          GACHA_TEST_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+        run: python3 -m scripts.telegram_widget_smoke

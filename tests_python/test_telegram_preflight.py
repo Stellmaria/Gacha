@@ -3,7 +3,7 @@ import io
 import unittest
 from urllib.error import HTTPError, URLError
 
-from scripts.telegram_preflight import ProbeFailure, check_bot
+from scripts.telegram_preflight import ProbeFailure, check_bot, diagnose_test_token
 
 
 TOKEN = "1234567890:NOTAREALTOKENFORUNITTESTS"
@@ -63,6 +63,27 @@ class TelegramPreflightTests(unittest.TestCase):
             return MemoryResponse(b'{"ok":true,"result":{"username":"NoIdBot"}}')
         with self.assertRaises(ProbeFailure):
             check_bot(TOKEN, "production", bad)
+
+    def test_environment_autodetection_without_secret_exposure(self):
+        calls = []
+        def opener(request, timeout):
+            calls.append(request.full_url)
+            if '/test/getMe' in request.full_url:
+                raise HTTPError(request.full_url, 401, 'bad token', {}, None)
+            return MemoryResponse(b'{"ok": true, "result": {"id": 20, "username": "OrdinaryBot"}}')
+        self.assertEqual(diagnose_test_token(TOKEN, opener), ('production_only', 'OrdinaryBot'))
+        self.assertEqual(len(calls), 2)
+
+    def test_autodetection_does_not_guess_on_network_failure(self):
+        def fail(request, timeout):
+            raise URLError(request.full_url)
+        with self.assertRaises(ProbeFailure):
+            diagnose_test_token(TOKEN, fail)
+
+    def test_autodetection_invalid_on_two_401(self):
+        def fail(request, timeout):
+            raise HTTPError(request.full_url, 401, 'no', {}, None)
+        self.assertEqual(diagnose_test_token(TOKEN, fail), ('invalid', None))
 
 
 if __name__ == "__main__":
