@@ -1,48 +1,45 @@
-# Куда сохранять Telegram Bot API Token
+# Токен и окружение Telegram для Gacha
 
-В репозитории `Stellmaria/Gacha` токены хранятся только в **GitHub Actions repository secrets**.
-Код/README/issues/PR/чат не являются хранилищем токенов.
+Владелец создала **одного бота для тестирования**. Важно различать предназначение бота и сеть Telegram, где его создали.
 
-Откройте:
-https://github.com/Stellmaria/Gacha/settings/secrets/actions
+## Подтверждено на GitHub Actions
 
-`Settings → Secrets and variables → Actions → Secrets → New repository secret`
+20.11.2026 повторный [run 44796501612](https://github.com/Stellmaria/Gacha/actions/runs/44796501612) показал: `GACHA_TEST_BOT_TOKEN` успешно принимается **обычным Telegram Bot API**, а `/test/getMe` возвращает 401.
 
-Создайте:
+Следовательно, **текущий бот создан в обычной сети Telegram и используется как тестовый по назначению**. Никакого второго бота только ради smoke базовых механик создавать не требуется. Токен не выводился в логи и не был прочитан агентом.
 
-| Название GitHub Secret | Что вставлять | Применение |
+## Где хранить токен
+
+GitHub Settings: https://github.com/Stellmaria/Gacha/settings/secrets/actions
+
+**Сейчас достаточно одного секрета:**
+
+| Secret | Значение | Ручные workflows |
 | --- | --- | --- |
-| `GACHA_BOT_TOKEN` | Токен обычного Telegram-бота из основного BotFather | Ручная проверка в production Bot API |
-| `GACHA_TEST_BOT_TOKEN` | Токен **отдельного бота** в Telegram Test Server | Ручная проверка в Test Bot API |
+| `GACHA_TEST_BOT_TOKEN` | Токен текущего бота из BotFather | `existing-test-bot` и `Telegram wheel fallback — MANUAL DEMO` |
 
-Не создавайте тестовый secret с основным токеном. У Telegram Test Server отдельные аккаунты и боты.
+`GACHA_BOT_TOKEN` пока **не требуется**; этот секрет зарезервирован для возможного отдельного публичного production-бота в будущем.
 
-**Никому не присылайте токены** — в том числе ChatGPT. Не передавайте их как inputs workflow.
-Telegram bot token даёт управление ботом; если он случайно опубликован — регенерируйте его через BotFather.
+## Проверка подключения текущего бота
 
-## Как проверить без запуска сервера
+- Открыть https://github.com/Stellmaria/Gacha/actions/workflows/telegram-preflight.yml .
+- `Run workflow` → `existing-test-bot` (**значение по умолчанию**).
+- GitHub-hosted runner выполняет только `getMe` через `https://api.telegram.org/bot<TOKEN>/getMe`.
+- Успех подтверждает идентичность/авторизацию текущего бота, но не работу HTML Widgets.
+- Старые failed runs, где был выбран специальный Test Server, останутся красными в истории — это нормально.
 
-После появления `.github/workflows/telegram-preflight.yml` в `main`:
+## Настоящий Telegram Test Server — отдельная среда
 
-1. Откройте https://github.com/Stellmaria/Gacha/actions/workflows/telegram-preflight.yml
-2. `Run workflow` → выбрать `test` или `production`.
-3. Запуск на GitHub-hosted `ubuntu-latest` выполнит **только `getMe`**.
-4. Проверка печатает только публичный username бота и выбранное окружение. Токен и полный URL не выводятся.
-5. Секреты не открываются в обычных `push` и `pull_request` проверках проекта.
+Для полной HTML Widgets-проверки нужен именно бот, созданный после входа в специальную Telegram Test Server среду отдельным аккаунтом. Тогда API выглядит как `https://api.telegram.org/bot<TOKEN>/test/getMe`. **Текущий токен нельзя заставить работать там изменением имени секрета, перезапуском CI или переименованием бота.**
 
-Workflow добавлен в `main` при merge PR #2. 20.11.2026 его тестовый запуск №44791230783 вернул **HTTP 401**. Если выбран `test`, а сохранён обычный BotFather-токен, он работать не будет: создайте отдельного бота из тестового аккаунта Telegram. Обновлённая проверка (Issue #3) безопасно классифицирует такой случай через read-only `getMe` в обоих окружениях; сами токены никогда не выводятся.
+Официальная инструкция: https://core.telegram.org/bots/features#testing-your-bot .
 
-## Ограничения
+Если понадобится реальная приёмка HTML Widget, отдельный тестовый аккаунт и бот в этой среде — самостоятельный шаг. **Не заменяйте** `GACHA_TEST_BOT_TOKEN` токеном от Test Server для текущего обычного Telegram smoke без обновления workflows: сейчас его использует обычный бот-демо.
 
-- Добавление настоящего secret осуществляется владельцем в GitHub Settings, а не через pull request: GitHub connector имеет доступ к файлам, но не к API изменения секретов.
-- Preflight `getMe` проверяет правильность токена и доступность Bot API, **не** работу рулетки, Widgets или приём сообщений.
-- GitHub Actions не является постоянно работающим сервером Telegram. Для вебхука и учёта вращений позже потребуется отдельный runtime с собственным безопасным хранилищем токенов.
-- В публичном репозитории даже `Actions` и CI logs могут видеть другие участники/посетители. Поэтому никаких секретов в output, curl debug, shell `set -x` или workflow inputs.
+## Ручное вращение без HTML Widget
 
-Официальная документация: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets и https://core.telegram.org/bots/features#testing-your-bot
+Уже подготовленный fallback отправит обычному тестовому боту /wheel inline-кнопку и GIF: [инструкция](TELEGRAM_INLINE_FALLBACK.md).
 
-## Пробное вращение в Telegram Test Server
+Не передавать токены в чат, Issues, PR, workflow inputs или файлы. Secrets добавляются владельцем в GitHub Settings. У `push`/`pull_request` CI нет доступа к Telegram Secrets.
 
-После того как тестовый `getMe` успешно проверит токен, отправьте **`/wheel`** в личный чат тестового бота, затем на GitHub запустите `Telegram Widget smoke` вручную. В течение примерно 90 секунд после отправки Widget нажмите в нём «Крутить». Это краткосрочный smoke, **без начисления карты/вельветов и без работающего в фоне бота**.
-
-Запуск smoke требует именно Test Server; в основной Telegram он сообщения не отправляет. Проверка отклоняет неоднозначный выбор нескольких адресатов. Токены не передаются через inputs.
+Все Telegram-запросы с секретами — только по явному ручному `workflow_dispatch`. Нет постоянного runtime, карточек и оплаты.

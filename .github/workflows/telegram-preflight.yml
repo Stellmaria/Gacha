@@ -1,28 +1,29 @@
 name: Telegram Bot API — ручная проверка
 
-# NEVER trigger on PR/push: these jobs can access bot credentials.
+# Manual only. NEVER trigger with PR/push/schedule: can access bot credentials.
 on:
   workflow_dispatch:
     inputs:
       target:
-        description: "Выберите окружение бота (getMe без отправки сообщений)"
+        description: "Какой Telegram API проверять? По умолчанию — существующий бот гачи."
         type: choice
         options:
-          - test
-          - production
-        default: test
+          - existing-test-bot
+          - telegram-test-server
+          - separate-production-bot
+        default: existing-test-bot
         required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: telegram-preflight-${{ inputs.target }}
+  group: gacha-telegram-preflight-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
-  check-test-bot:
-    if: ${{ inputs.target == 'test' }}
+  existing-test-bot:
+    if: ${{ inputs.target == 'existing-test-bot' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -30,13 +31,27 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - name: Read-only Telegram test-server getMe
+      - name: Check existing Gacha test bot on ordinary Telegram API (read-only)
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+        run: python3 scripts/telegram_preflight.py --target production
+
+  telegram-test-server:
+    if: ${{ inputs.target == 'telegram-test-server' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Check a dedicated Telegram Test Server account bot (read-only)
         env:
           GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
         run: python3 scripts/telegram_preflight.py --target test
 
-  check-production-bot:
-    if: ${{ inputs.target == 'production' }}
+  separate-production-bot:
+    if: ${{ inputs.target == 'separate-production-bot' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -44,7 +59,7 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - name: Read-only Telegram production getMe
+      - name: Check future separate production bot (read-only)
         env:
           GACHA_BOT_TOKEN: ${{ secrets.GACHA_BOT_TOKEN }}
         run: python3 scripts/telegram_preflight.py --target production
