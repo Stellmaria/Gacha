@@ -14,7 +14,8 @@ from urllib.request import Request, urlopen
 
 from scripts.telegram_preflight import ProbeFailure, check_bot
 from scripts.telegram_widget_smoke import choose_owner, choose_rarity
-from scripts.wheel_gif import NAMES, render_wheel_gif
+from scripts.wheel_gif import NAMES
+from scripts.ornate_wheel import REVEAL_DELAY_SECONDS, render_ornate_gif
 
 
 class DemoError(Exception):
@@ -23,6 +24,7 @@ class DemoError(Exception):
 
 CALLBACK = "gacha:demo:spin:v1"
 POLL_SECONDS = 80
+SPINNING_CAPTION = "Колесо вращается…\\nДЕМО: карточки и попытки не начисляются."
 ALLOWED_METHODS = frozenset({
     "getUpdates", "sendMessage", "answerCallbackQuery",
     "editMessageReplyMarkup", "sendAnimation",
@@ -71,6 +73,27 @@ def send_gif(token: str, chat_id: int, gif: bytes, caption: str):
     request = Request(url, method="POST", data=payload,
                       headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
     return _read_response(request, timeout=20)
+
+
+def deliver_demo_spin(token: str, chat_id: int, rarity: int, *, sleeper=time.sleep) -> None:
+    """Send hidden-outcome animation, then reveal in a separate message.
+
+    The server commits to one picked result before sending the animation.
+    A Telegram send acknowledgment is not a client playback acknowledgment;
+    the extra delay minimizes, but cannot rule out, early client-side reveals.
+    """
+    gif, playback_seconds = render_ornate_gif(rarity)
+    result = send_gif(token, chat_id, gif, SPINNING_CAPTION)
+    if not isinstance(result, dict) or type(result.get("message_id")) is not int:
+        raise DemoError("Telegram did not confirm the animation message.")
+    sleeper(max(REVEAL_DELAY_SECONDS, playback_seconds + 1))
+    revealed = api(token, "sendMessage", {
+        "chat_id": chat_id,
+        "text": "Выпала редкость: " + NAMES[rarity] +
+                "\\nДЕМО: карточка не выдана и попытка не списана."
+    })
+    if not isinstance(revealed, dict) or type(revealed.get("message_id")) is not int:
+        raise DemoError("Telegram did not confirm the separate reveal message.")
 
 
 def matches_callback(update: dict, chat_id: int, user_id: int, message_id: int) -> bool:
@@ -154,12 +177,7 @@ def run() -> None:
                 "reply_markup": {"inline_keyboard": []}
             })
             rarity = choose_rarity(secrets.randbelow(100))
-            gif = render_wheel_gif(rarity)
-            result = send_gif(token, chat_id, gif,
-                              "Выпала редкость: " + NAMES[rarity] +
-                              "\nДЕМО: карточка не выдана и попытка не списана.")
-            if not isinstance(result, dict) or type(result.get("message_id")) is not int:
-                raise DemoError("Telegram did not confirm the animation message.")
+            deliver_demo_spin(token, chat_id, rarity)
             print("DEMO SUCCESS: animation delivered for one server-picked rarity.")
             return
     raise DemoError("Demo button was sent, but no click arrived within 80 seconds.")
