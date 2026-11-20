@@ -48,6 +48,10 @@ python -m http.server 8000
 
 Либо использовать статический HTTP-сервер. Запускать на production-хостах Velvet не требуется.
 
+## Где хранить токены Telegram
+
+Не вставляйте токен в чат, исходники или переменные `workflow_dispatch`. Для проверки бота используем два GitHub Actions Secrets: `GACHA_BOT_TOKEN` (обычный Telegram) и `GACHA_TEST_BOT_TOKEN` (отдельный Telegram Test Server). [Пошаговая инструкция](docs/BOT_TOKENS.md).
+
 ## Тестирование Telegram
 
 GitHub CI проверяет только код и логику, **не работу Telegram-клиента**. Для Widgets нужно отдельное тестовое окружение Telegram и тестовый бот; для публичного бота готовим fallback с inline-кнопкой и анимацией. [План тестирования](docs/TELEGRAM_TEST_PLAN.md).
