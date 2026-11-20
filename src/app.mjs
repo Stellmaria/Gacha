@@ -6,7 +6,7 @@ const spin = document.querySelector('#spin');
 const status = document.querySelector('#result');
 const oddsList = document.querySelector('#odds-list');
 const modeButtons = [...document.querySelectorAll('.mode')];
-let currentMode = 'prizes';
+let currentMode = 'cards';
 let angle = 0;
 let busy = false;
 

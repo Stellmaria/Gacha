@@ -13,3 +13,8 @@
 - CI evidence: SHA `35a664e0c8d22e592ee71102507a88f082c1d828`, push run https://github.com/Stellmaria/Gacha/actions/runs/44786934827 SUCCESS, PR run https://github.com/Stellmaria/Gacha/actions/runs/44786938689 SUCCESS. Unit checks, module syntax, static entry passed.
 - Осталось: финальный CI на обновлённом SHA; осмотр UI в настоящем браузере; согласование связки двух колёс; Telegram Bot API availability и live-приёмка в отдельной задаче.
 - Merge/deploy: не выполнялись.
+
+- Дополнение требований: основная рулетка — ежедневная на 6 редкостей; 8-секторная — отдельный призовой режим.
+- Добавлен план Telegram test server и fallback для публичных ботов; утренние/вечерние выдачи остаются настраиваемыми и не утверждёнными.
+- Добавлены независимые тесты времени начислений (пока **только чистая логика**, без реальной БД/бота).
+- Фактические CI checks нового head записываются после выполнения.
