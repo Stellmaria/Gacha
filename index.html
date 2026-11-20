@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#100b14">
+  <meta name="description" content="Демонстрация коллекционной гачи: вращающееся колесо без реальных наград.">
+  <title>Gacha — эксперимент с рулеткой</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/app.mjs"></script>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <p class="eyebrow">КОЛЛЕКЦИОННАЯ ГАЧА · ПРОТОТИП</p>
+      <h1>Колесо судьбы</h1>
+      <p class="lead">Пробный розыгрыш без списания вельветов и без выдачи карт.</p>
+    </header>
+
+    <section class="game" aria-label="Демонстрация рулетки">
+      <div class="game-top">
+        <p class="section-title">ВЫБЕРИ РЕЖИМ</p>
+        <div class="modes" role="group" aria-label="Режим рулетки">
+          <button class="mode active" type="button" data-mode="prizes" aria-pressed="true">Призы · 8 секторов</button>
+          <button class="mode" type="button" data-mode="cards" aria-pressed="false">Карты · 6 редкостей</button>
+        </div>
+      </div>
+
+      <div class="wheel-stage">
+        <div class="wheel-ornament" aria-hidden="true">✧</div>
+        <div class="wheel-shell">
+          <div class="wheel-pointer" aria-hidden="true"></div>
+          <svg id="wheel" class="wheel" viewBox="0 0 360 360" role="img" aria-label="Колесо с призовыми секторами"></svg>
+          <div class="wheel-center" aria-hidden="true">✦</div>
+        </div>
+        <p class="wheel-hint">Сектор определяется по вероятности, а не равномерно.</p>
+      </div>
+
+      <div class="actions">
+        <button id="spin" class="spin" type="button">КРУТИТЬ КОЛЕСО</button>
+        <p id="result" class="result" role="status" aria-live="polite">Нажми на кнопку для демонстрационного вращения.</p>
+        <p class="demo-note">Демо · нет баланса, оплаты или настоящих карточек</p>
+      </div>
+    </section>
+
+    <section class="odds" aria-labelledby="odds-title">
+      <h2 id="odds-title">Вероятности выпадения</h2>
+      <p class="odds-caption">Размер каждого сектора точно соответствует указанному шансу.</p>
+      <div id="odds-list" class="odds-grid"></div>
+    </section>
+
+    <footer>Название проекта временное · Telegram-интеграция не подключена.</footer>
+  </main>
+</body>
+</html>
