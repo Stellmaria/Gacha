@@ -49,13 +49,41 @@ def check_bot(token: str, target: str, opener=urlopen) -> str:
     return username
 
 
+def diagnose_test_token(token: str, opener=urlopen) -> tuple[str, str | None]:
+    """Only read-only getMe; never copies token or prints raw request URLs.
+
+    Returns ("test", username), ("production_only", username), or
+    ("invalid", None). A network error is not classified as invalid.
+    """
+    try:
+        return ("test", check_bot(token, "test", opener))
+    except ProbeFailure as exc:
+        if "HTTP 401" not in str(exc):
+            raise
+    try:
+        return ("production_only", check_bot(token, "production", opener))
+    except ProbeFailure as exc:
+        if "HTTP 401" in str(exc):
+            return ("invalid", None)
+        raise
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Gacha Bot API read-only connectivity check")
     parser.add_argument("--target", choices=("test", "production"), required=True)
     args = parser.parse_args()
     token = os.environ.get("GACHA_BOT_TOKEN", "")
     try:
-        username = check_bot(token, args.target)
+        if args.target == "test":
+            kind, username = diagnose_test_token(token)
+            if kind == "production_only":
+                print("CHECK FAILED: token belongs to ordinary Telegram production, not Test Server. Create bot inside Telegram Test Server and update GACHA_TEST_BOT_TOKEN.", file=sys.stderr)
+                return 1
+            if kind == "invalid":
+                print("CHECK FAILED: token rejected by both Telegram environments (HTTP 401). Verify stored secret.", file=sys.stderr)
+                return 1
+        else:
+            username = check_bot(token, args.target)
     except ProbeFailure as exc:
         # ProbeFailure messages are deliberately sanitized; never print exceptions
         # from urllib/Request, because their URL contains the credential.

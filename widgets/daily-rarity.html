@@ -1,0 +1,51 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}
+body{margin:0;padding:12px;background:#201527;color:#f8e5d5;font-family:system-ui,sans-serif;text-align:center}
+h3{font-size:16px;margin:0 0 9px;color:#eed0a5}p{font-size:12px;color:#d8bfc9}
+#frame{position:relative;max-width:300px;margin:auto}
+#disk{width:100%;aspect-ratio:1;transition:transform 5500ms cubic-bezier(.12,.74,.15,1)}
+#disk svg{width:100%;height:100%}
+#pointer{position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:13px solid transparent;border-right:13px solid transparent;border-top:32px solid #f6d49c;z-index:5}
+#center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;border:3px solid #f6d49c;background:#271931;color:#f6d49c;font-size:26px;display:flex;align-items:center;justify-content:center}
+button{margin:8px auto;padding:12px 22px;border:1px solid #f0cba3;border-radius:30px;background:#ba886c;color:#201527;font-weight:bold;font-size:13px}
+button:disabled{opacity:.65}
+#result{min-height:38px}
+@media(prefers-reduced-motion:reduce){#disk{transition-duration:80ms}}
+</style></head><body>
+<h3>Ежедневная гача · ДЕМО</h3>
+<div id="frame"><div id="pointer"></div><div id="disk"><svg id="wheel" viewBox="0 0 300 300"></svg></div><div id="center">✦</div></div>
+<button id="spin">КРУТИТЬ</button><p id="result">6 редкостей · награды не начисляются</p>
+<script>
+(function(){
+const W=globalThis.TelegramWidget,weights=[25,22,19,16,11,7],labels=['CLASSIC','ELITE','ROYAL','EPIC','MYTHIC','ETERNAL'],colors=['#827e9c','#bd6364','#d39d42','#c74a32','#9a4eb4','#348eae'];
+const svg=document.getElementById('wheel'),disk=document.getElementById('disk'),status=document.getElementById('result'),btn=document.getElementById('spin'),ns='http://www.w3.org/2000/svg';
+let angle=0,busy=false,done=false;
+function xy(d,r){const a=d*Math.PI/180;return [150+r*Math.sin(a),150-r*Math.cos(a)]}
+function node(t,attrs){const e=document.createElementNS(ns,t);for(const k in attrs)e.setAttribute(k,attrs[k]);svg.appendChild(e);return e}
+node('circle',{cx:150,cy:150,r:148,fill:'#25192d',stroke:'#e3b58c','stroke-width':5});
+let a=0;for(let i=0;i<6;i++){
+ const b=a+weights[i]*3.6,u=xy(a,138),v=xy(b,138),m=xy((a+b)/2,96);
+ node('path',{d:'M150 150 L'+u.join(' ')+' A138 138 0 0 1 '+v.join(' ')+' Z',fill:colors[i],stroke:'#ecd0ab','stroke-width':1.4});
+ const t=node('text',{x:m[0],y:m[1]-3,fill:'#fff8ed','font-size':12,'font-weight':'bold','text-anchor':'middle'});t.textContent=labels[i];
+ const p=node('text',{x:m[0],y:m[1]+13,fill:'#fff2d6','font-size':11,'text-anchor':'middle'});p.textContent=weights[i]+'%';a=b;
+}
+function show(i,animated){
+ if(!Number.isInteger(i)||i<0||i>=6)return;
+ done=true;btn.disabled=true;let start=0;for(let j=0;j<i;j++)start+=weights[j];
+ const center=(start+weights[i]/2)*3.6,fix=(360-((angle+center)%360))%360;angle+=(animated?2160:0)+fix;
+ if(!animated)disk.style.transition='none';
+ disk.style.transform='rotate('+angle+'deg)';
+ if(!animated){void disk.getBoundingClientRect();disk.style.transition='';status.textContent='Выпало: '+labels[i]+' · демо'}
+ else{status.textContent='Колесо вращается…';setTimeout(function(){busy=false;status.textContent='Выпало: '+labels[i]+' · демо'},5600)}
+}
+function restore(){if(busy)return;try{const v=JSON.parse(W.chatData||'null');if(v)show(v.i,false)}catch(e){}}
+btn.addEventListener('click',function(){
+ if(busy||done||!W)return;busy=true;btn.disabled=true;status.textContent='Запрашиваю результат…';
+ W.request('spin').then(function(v){try{const x=JSON.parse(v.result);if(!Number.isInteger(x.i)||x.i<0||x.i>=6)throw Error();show(x.i,true)}
+ catch(e){busy=false;btn.disabled=false;status.textContent='Неверный ответ бота'}},
+ function(){busy=false;btn.disabled=false;status.textContent='Нет ответа. Повтори попытку'});
+});
+if(W){W.onEvent('chatDataChanged',restore);restore();W.ready&&W.ready()}
+else{btn.disabled=true;status.textContent='Открой в Telegram Test Server'}
+})();
+</script></body></html>
