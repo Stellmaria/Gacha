@@ -1,0 +1,50 @@
+name: Telegram Bot API — ручная проверка
+
+# NEVER trigger on PR/push: these jobs can access bot credentials.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Выберите окружение бота (getMe без отправки сообщений)"
+        type: choice
+        options:
+          - test
+          - production
+        default: test
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-preflight-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  check-test-bot:
+    if: ${{ inputs.target == 'test' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Read-only Telegram test-server getMe
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+        run: python3 scripts/telegram_preflight.py --target test
+
+  check-production-bot:
+    if: ${{ inputs.target == 'production' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Read-only Telegram production getMe
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_BOT_TOKEN }}
+        run: python3 scripts/telegram_preflight.py --target production

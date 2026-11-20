@@ -1,0 +1,30 @@
+name: Prototype checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wheel-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test weighted selection and pointer geometry
+        run: node --test
+      - name: Validate browser modules
+        run: |
+          node --check src/app.mjs
+          node --check src/wheels.mjs
+      - name: Verify Telegram preflight offline (no tokens)
+        run: python3 -m unittest discover -s tests_python -v
+      - name: Compile Telegram preflight script
+        run: python3 -m py_compile scripts/telegram_preflight.py
+      - name: Check static HTML entry
+        run: test -s index.html && test -s styles.css && test -s README.md
