@@ -40,5 +40,5 @@ jobs:
           python-version: '3.12'
       - name: Install pinned GIF dependency
         run: python -m pip install --disable-pip-version-check Pillow==11.3.0
-      - name: Render and inspect all six animated GIF outcomes
-        run: python -m unittest tests_python.test_wheel_gif tests_python.test_ornate_wheel -v
+      - name: Validate six original GIFs and native chat Royal TGS UX
+        run: python -m unittest tests_python.test_wheel_gif tests_python.test_ornate_wheel tests_python.test_telegram_chat_royal_pilot -v
