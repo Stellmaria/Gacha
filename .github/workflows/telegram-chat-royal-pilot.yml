@@ -1,0 +1,34 @@
+name: Gacha Royal chat-native TGS — MANUAL PILOT
+
+# Manual-only; uses the same existing ordinary Telegram test-purpose bot.
+# First visual pass: forced Royal, no random draws, grants or payments.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gacha-existing-bot-inline-demo
+  cancel-in-progress: false
+
+jobs:
+  royal-chat-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image dependency for original static cover and demo card
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Offline TGS, media and UX sequence checks
+        run: python -m unittest tests_python.test_telegram_chat_royal_pilot -v
+      - name: Manual one-user, one-click Telegram Royal chat-only pilot
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+        run: python -m scripts.telegram_chat_royal_pilot
