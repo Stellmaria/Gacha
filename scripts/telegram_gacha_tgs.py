@@ -82,7 +82,7 @@ def _layer(name, shapes, *, rotation=0, index=1):
             'p': {'a': 0, 'k': [256, 256, 0]},
             'a': {'a': 0, 'k': [256, 256, 0]},
             's': {'a': 0, 'k': [100, 100, 100]},
-        }, 'ao': 0, 'shapes': shapes, 'ip': 0, 'op': FRAMES, 'st': 0, 'bm': 0
+        }, 'ao': 0, 'shapes': list(reversed(shapes)), 'ip': 0, 'op': FRAMES, 'st': 0, 'bm': 0
     }
 
 

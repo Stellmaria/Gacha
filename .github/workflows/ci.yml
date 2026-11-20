@@ -42,3 +42,10 @@ jobs:
         run: python -m pip install --disable-pip-version-check Pillow==11.3.0
       - name: Validate six original GIFs and native chat Royal TGS UX
         run: python -m unittest tests_python.test_wheel_gif tests_python.test_ornate_wheel tests_python.test_telegram_chat_royal_pilot -v
+      - name: Render first frame and verify sector colors, ruby and transparency
+        run: python -m scripts.render_tgs_visual_smoke gacha-tgs-rendered-preview.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gacha-royal-tgs-rendered-preview
+          path: gacha-tgs-rendered-preview.png
+          retention-days: 7
