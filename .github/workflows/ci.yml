@@ -39,6 +39,6 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pinned GIF dependency
-        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 CairoSVG==2.8.2
       - name: Render and inspect all six animated GIF outcomes
-        run: python -m unittest tests_python.test_wheel_gif -v
+        run: python -m unittest tests_python.test_wheel_gif tests_python.test_ornate_wheel -v

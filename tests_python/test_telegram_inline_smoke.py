@@ -6,7 +6,7 @@ from urllib.error import HTTPError
 from unittest.mock import patch
 
 from scripts.telegram_inline_smoke import (
-    CALLBACK, DemoError, api, matches_callback, send_gif
+    CALLBACK, DemoError, SPINNING_CAPTION, api, deliver_demo_spin, matches_callback, send_gif
 )
 
 
@@ -52,6 +52,40 @@ class InlineDemoTests(unittest.TestCase):
         self.assertEqual(len(wire), 1)
         self.assertIn(b'name="animation"; filename="gacha-wheel.gif"', wire[0][1])
         self.assertIn(b"Demo test", wire[0][1])
+
+    def test_reveal_is_separate_and_delayed_beyond_animation(self):
+        trace = []
+        def fake_media(token, chat_id, data, caption):
+            trace.append(("animation", caption))
+            return {"message_id": 91}
+        def fake_api(token, method, payload):
+            trace.append((method, payload["text"]))
+            return {"message_id": 92}
+        def fake_sleep(seconds):
+            trace.append(("delay", seconds))
+        with patch("scripts.telegram_inline_smoke.render_ornate_gif",
+                   return_value=(b"GIF89a-test", 5.94)), \
+             patch("scripts.telegram_inline_smoke.send_gif", fake_media), \
+             patch("scripts.telegram_inline_smoke.api", fake_api):
+            deliver_demo_spin("fake-token", 312, 4, sleeper=fake_sleep)
+        self.assertEqual([x[0] for x in trace], ["animation", "delay", "sendMessage"])
+        self.assertGreater(trace[1][1], 5.94)
+        self.assertEqual(trace[0][1], SPINNING_CAPTION)
+        for label in ("CLASSIC", "ELITE", "ROYAL", "EPIC", "MYTHIC", "ETERNAL",
+                      "Выпала", "редкость"):
+            self.assertNotIn(label, trace[0][1])
+        self.assertIn("MYTHIC", trace[2][1])
+
+    def test_no_reveal_if_animation_delivery_fails(self):
+        def fail_media(*args):
+            raise DemoError("sendAnimation failed")
+        with patch("scripts.telegram_inline_smoke.render_ornate_gif",
+                   return_value=(b"GIF89a-test", 5.94)), \
+             patch("scripts.telegram_inline_smoke.send_gif", fail_media), \
+             patch("scripts.telegram_inline_smoke.api") as bot_api:
+            with self.assertRaises(DemoError):
+                deliver_demo_spin("fake-token", 312, 0, sleeper=lambda _: None)
+            bot_api.assert_not_called()
 
 
 if __name__ == "__main__":
