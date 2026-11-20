@@ -26,3 +26,7 @@ The first pilot is *fixed to Royal* to compare aesthetic and pacing. It is not a
 ## Verification
 
 `python -m unittest tests_python.test_telegram_chat_royal_pilot -v` validates TGS gzip format and limits, separate stationary pointer/core layer, ownership matching, media method restriction, staged delivery, and failure closure. CI checks do not replace an actual Telegram acceptance test.
+
+## Known live defect and follow-up
+
+The 2026-11-21 first live attempt returned successful Telegram API calls, but the rendered animation was **not acceptable**: Telegram showed blank disks and hollow hubs. This was a TGS painter-order bug, tracked in [issue #14](https://github.com/Stellmaria/Gacha/issues/14). The new Pillow-backed visual smoke explicitly checks colored wedges and the central gemstone. The animated TGS is still a simplified concept; the owner's detailed original illustration is not reproduced. Do not use a green API call or merely valid TGS file as proof of acceptable UX. Do not rerun the live pilot until the rendered preview is visually approved.

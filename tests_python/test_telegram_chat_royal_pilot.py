@@ -114,6 +114,18 @@ class RoyalChatPilotTests(unittest.TestCase):
         ap.assert_not_called()
         media.assert_not_called()
 
+    def test_tgs_visual_scene_exposes_six_wedges_and_ruby(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow runs in the GitHub Actions rendering job')
+        from scripts.render_tgs_visual_smoke import assert_visible_sectors_and_core, render_frame
+        image = assert_visible_sectors_and_core(make_tgs(launch=True))
+        self.assertEqual(image.size, (512, 512))
+        # Royal should become the topmost wedge at the settled end of the result.
+        settled = render_frame(make_tgs(launch=False), 179)
+        self.assertGreater(settled.getpixel((256, 163))[0], 120)
+
     def test_cover_and_demo_card_are_valid_jpegs_when_pillow_available(self):
         try:
             from PIL import Image
