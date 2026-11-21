@@ -3,7 +3,7 @@
 - Схема: 2
 - Компоненты: `gacha_core/telegram_adapter.py`, `gacha_core/telegram_runtime.py`, `db/migrations/003_telegram_adapter.sql`, `tests_python/test_mvp1_telegram_adapter.py`, CI, docs
 - Приёмка: approved 7 local private cards, six original MP4 in ordinary Telegram chat, profile, daily attempts, double-click and retry, bound callbacks, idempotent result, private image delivery, uncertainty quarantine, CI PG18 & mocked API, no live deploy
-- PR: pending
+- PR: #27
 - Связанные issues: #25
 - Связанные записи: `2026-11-21-mvp1-foundation`, `2026-11-22-seven-approved-private-cards`
 
@@ -26,3 +26,8 @@
 - Outbox quarantines ambiguous delivery; API retry does not reroll/recharge or resend card.
 - Opt-in polling requires private env and exact bot name and no existing webhook; PostgreSQL advisory lock and persisted cursor.
 - Unit Telegram Bot API is mocked; no real messages sent. Separate closed beta acceptance still needed.
+
+- Local exact checks: Python 110 tests, 23 skipped locally (PG integration + optional imaging); JavaScript 16 PASS; no Bot API calls.
+- Safety hardening: runtime now requires an approved database name and non-superuser role and pre-verifies all seven active catalog records/checksums before starting; the ordinary bot username must match and no webhook may exist.
+- Existing manual `/wheel6` remains functionally unchanged; the editor now accepts an optional non-demo caption for real card delivery.
+- Live behavior and deployment still NOT validated/authorized.

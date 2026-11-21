@@ -26,19 +26,39 @@ def verify_operator_environment(env: dict) -> tuple[str,str,Path,str]:
     dsn=env.get('GACHA_DATABASE_URL','')
     username=env.get('GACHA_EXPECTED_BOT_USERNAME','')
     root=env.get('GACHA_PRIVATE_CARD_ROOT','')
+    database_name=env.get('GACHA_EXPECTED_DATABASE_NAME','')
+    if (not re.fullmatch(r'[a-z][a-z0-9_]{2,62}', database_name) or
+            database_name in {'postgres','velvet','diamond','template0','template1'}):
+        raise RuntimeError('Dedicated expected Gacha database name is required')
     if (not re.fullmatch(r'\d+:[a-zA-Z0-9_-]{10,}',token) or
             not dsn or not root or not re.fullmatch(r'[a-zA-Z0-9_]{5,32}',username)):
         raise RuntimeError('Required private Gacha bot/db/cards configuration missing')
-    return token,dsn,Path(root),username
+    return token,dsn,Path(root),username,database_name
 
 
 def run() -> None:
-    token,dsn,root,expected=verify_operator_environment(os.environ)
+    token,dsn,root,expected,expected_db=verify_operator_environment(os.environ)
     # Refuse to start if any of the seven owner-approved originals are missing.
-    verify_private_cards(root)
+    approved=verify_private_cards(root)
     import psycopg
     db=psycopg.connect(dsn,autocommit=True)
     try:
+        with db.cursor() as check:
+            check.execute('SELECT current_database(), current_user')
+            db_name,db_role=check.fetchone()
+            if db_name!=expected_db:
+                raise RuntimeError('Refusing to run Gacha against unapproved database')
+            check.execute('SELECT rolsuper FROM pg_roles WHERE rolname=%s',(db_role,))
+            if check.fetchone()[0]:
+                raise RuntimeError('Bot runtime must not connect with PostgreSQL superuser')
+            check.execute('SELECT card_id,kind,rarity,media_sha256,is_active '
+                          'FROM gacha.cards WHERE card_id = ANY(%s)',
+                          ([c['card_id'] for c in approved],))
+            found={row[0]:row[1:] for row in check.fetchall()}
+            for card in approved:
+                if found.get(card['card_id']) != (
+                        card['kind'],card['rarity'],card['sha256'],True):
+                    raise RuntimeError('Approved seven-card catalog is not installed/active')
         if not db.execute('SELECT pg_try_advisory_lock(%s)',(LOCK_ID,)).fetchone()[0]:
             raise RuntimeError('Another Gacha polling worker holds the database singleton lock')
         me=api(token,'getMe',{})

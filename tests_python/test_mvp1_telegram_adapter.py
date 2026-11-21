@@ -123,11 +123,46 @@ class TelegramAdapterContractTests(unittest.TestCase):
         self.assertEqual(self.handler.handle_update({'callback_query':{'data':'g1:spin:../../','id':'q'}},now=NOW).handled,False)
         self.handler.intents.commit_callback.assert_not_called()
 
+    def test_real_telegram_client_sends_sha_checked_png_bytes(self):
+        client=t.TelegramClient('123:TESTTOKEN')
+        actual=b'\x89PNG\r\n\x1a\nverified-card-bytes'
+        with patch.object(t,'image_for_card',return_value=actual) as img, \
+             patch.object(t,'send_media',return_value={'message_id':88}) as send:
+            self.assertEqual(client.send_card(101,'elite_09_tiss','/private/root'),88)
+        img.assert_called_once_with('/private/root','elite_09_tiss')
+        args=send.call_args.args
+        self.assertEqual(args[:3],('123:TESTTOKEN',101,'sendPhoto'))
+        self.assertEqual(args[3],actual)
+        self.assertIn('Тисс',args[4])
+        self.assertIn('Elite',args[4])
+
+    def test_real_telegram_client_uses_original_mp4_caption_then_reveal(self):
+        client=t.TelegramClient('123:TESTTOKEN')
+        with patch.object(t,'video_bytes',return_value=b'original-mp4') as video, \
+             patch.object(t,'edit_to_animation',return_value={'message_id':55}) as edit, \
+             patch.object(t,'api',return_value={'message_id':55}) as json_api:
+            self.assertEqual(client.show_wheel(101,55,'Royal'),55)
+            client.reveal_rarity(101,55,'Royal')
+        video.assert_called_once_with('Royal')
+        self.assertEqual(edit.call_args.kwargs['caption'],t.CAPTION_SPINNING)
+        self.assertNotIn('ДЕМО',edit.call_args.kwargs['caption'])
+        self.assertEqual(json_api.call_args.args[1],'editMessageCaption')
+        self.assertIn('ROYAL',json_api.call_args.args[2]['caption'])
+
+    def test_fallback_animation_after_explicit_rejection(self):
+        client=t.TelegramClient('123:TESTTOKEN')
+        with patch.object(t,'video_bytes',return_value=b'original-mp4'), \
+             patch.object(t,'edit_to_animation',side_effect=t.MediaReplacementRejected('HTTP400')), \
+             patch.object(t,'send_animation_fallback',return_value={'message_id':77}) as fallback:
+            self.assertEqual(client.show_wheel(101,55,'Epic'),77)
+        self.assertEqual(fallback.call_args.kwargs['caption'],t.CAPTION_SPINNING)
+
     def test_runtime_requires_explicit_operators_gates(self):
         with self.assertRaises(RuntimeError):verify_operator_environment({})
         env={'GACHA_ENABLE_POLLING':'YES','GACHA_BOT_TOKEN':'123:verySecretToken','GACHA_DATABASE_URL':'postgres://test',
-             'GACHA_PRIVATE_CARD_ROOT':'/private/cards','GACHA_EXPECTED_BOT_USERNAME':'velvet_gacha_v1_bot'}
-        self.assertEqual(verify_operator_environment(env)[3],'velvet_gacha_v1_bot')
+             'GACHA_PRIVATE_CARD_ROOT':'/private/cards','GACHA_EXPECTED_BOT_USERNAME':'velvet_gacha_v1_bot','GACHA_EXPECTED_DATABASE_NAME':'gacha_beta'}
+        self.assertEqual(verify_operator_environment(env)[3:5],('velvet_gacha_v1_bot','gacha_beta'))
         with self.assertRaises(RuntimeError):verify_operator_environment({**env,'GACHA_EXPECTED_BOT_USERNAME':''})
+        with self.assertRaises(RuntimeError):verify_operator_environment({**env,'GACHA_EXPECTED_DATABASE_NAME':'velvet'})
 
 if __name__=='__main__':unittest.main()
