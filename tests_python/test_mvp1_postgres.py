@@ -30,6 +30,13 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.db = psycopg.connect(DSN, autocommit=True)
+        database_name, db_role = cls.db.execute(
+            'SELECT current_database(), current_user').fetchone()
+        # These tests TRUNCATE tables. Restrict to the ephemeral CI service
+        # so accidentally supplying a production DSN is never destructive.
+        if database_name != 'gacha_ci' or db_role != 'gacha_ci':
+            cls.db.close()
+            raise RuntimeError('Refusing destructive integration tests outside dedicated gacha_ci')
         apply_migrations(cls.db)
 
     @classmethod

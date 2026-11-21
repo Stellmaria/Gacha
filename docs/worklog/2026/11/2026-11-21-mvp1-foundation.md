@@ -3,7 +3,7 @@
 - Схема: 2
 - Компоненты: `db/migrations/001_mvp1_core.sql`, `gacha_core/`, `tests_python/test_mvp1_*`, `.github/workflows/ci.yml`, `docs/MVP1_GAME_CORE.md`
 - Приёмка: PG18 integration: регистрация, 10/сутки в 00:00 Europe/Moscow, сброс без накопления, bonus separate, Elite, six odds, repeat cards, immutable spin, idempotency, concurrency, outbox and wallet structure, failed spin rollback
-- PR: pending
+- PR: #23
 - Связанные issues: `#22`
 - Связанные записи: `docs/worklog/2026/11/2026-11-21-wheel6-inline-reveal.md`
 
@@ -21,3 +21,11 @@
 - Apply migration to ephemeral PG18 service in GitHub Actions; fixture catalog appears only in tests, not production seed.
 - Run Python unit + PostgreSQL integration and existing Node/browser/Telegram smoke tests.
 - If CI passes: protected merge without production deploy; next bounded slice is permanent Telegram adapter and verified card asset import.
+
+## Фактически выполнено и проверено
+
+- Код: схема `gacha`, PostgreSQL core, idempotency key and player locks, exact Moscow game-day, separate bonus, event card category distinct from standard six.
+- Первое PostgreSQL CI упало до изменения БД: парсер миграции не учитывал комментарий перед `BEGIN;`. Исправлено в b6a15fe, повторный PostgreSQL 18 CI PASS.
+- Интеграционные тесты ограничены одноразовой CI-базой `gacha_ci`/role `gacha_ci` до `TRUNCATE`.
+- Локально: Python 80 OK, из них 19 skipped (14 PG integration без отдельной БД); Node 16 PASS; на GitHub isolated PG18 migration and integration tests PASS.
+- Live/Gacha production deploy **не выполнялся**; следующее — source-verified 7 card images and secure Telegram adapter, separate PR/acceptance.
