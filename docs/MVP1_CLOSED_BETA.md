@@ -92,3 +92,46 @@ Operator order of operations (do **not** skip gates):
 
 No card trading, Stars, shop, paid mechanics, public announcement or event
 card #22 drops are authorized by the beta deployment.
+
+## Approved co-located C1 closed-beta deployment (22 November 2026)
+
+The owner explicitly chose the existing multi-bot production host
+`Velvet.play2go.cloud` (C1) for the **isolated** Gacha closed beta.
+The earlier instruction to provision a separate physical VPS is superseded,
+but sharing Velvet, Demian, Diamond, Shop or CI databases, tokens or Compose
+projects remains prohibited. The independent Docker project is versioned
+in `deploy/c1-beta/` and staged in `/home/velvet/gacha-beta` on C1,
+not in `/srv/velvet`. Only the separate PostgreSQL service starts by default;
+`bot` is gated behind the explicit `live` Compose profile and
+`GACHA_ENABLE_POLLING=YES`, seven matching assets, a protected token and a
+private tester allowlist.
+
+Read-only findings on C1 before deployment: available RAM ~12 GiB, 61 GiB
+disk free (79% occupied), swap ~4 GiB used. Initial Docker default subnet
+pools were exhausted; the dedicated outbound bridge explicitly uses
+`10.251.240.0/28`, selected after checking actual existing Docker networks
+and OS routes. PostgreSQL attaches **only** to its private internal network,
+and no host port is published. This subnet must be rechecked before any
+installation on a different host.
+
+Current staging evidence:
+- Separate `gacha-beta-postgres-1` PostgreSQL 18.6 container healthy;
+  `gacha_beta` owned by `gacha_runtime` with
+  `rolsuper=rolcreatedb=rolcreaterole=false`.
+- Migrations `001`–`003` applied via the disposable Python service.
+- Fresh encrypted `pg_dump` restored into independent
+  `gacha_restore_drill`; three migration versions and ownership
+  checked; drill DB dropped afterwards.
+- All six original wheel MP4s pass preflight. No live polling was started.
+- Seven named PNG files were discovered in Windows Downloads, but their
+  byte sizes and SHA-256 hashes differ from the seven previously approved
+  manifest entries. They cannot be registered silently. None of 161 ZIPs in
+  that Downloads folder contained originals of the expected byte sizes.
+- Private Telegram credential and two-owner-approved tester IDs have not
+  been provisioned onto C1. The bot remains **OFF**.
+
+Operator must secure the exact original approved ZIP (or separately approve
+and test a new manifest), provision secret and allowed IDs through an
+authorized private channel, prove exclusive polling ownership and pass the
+online beta preflight before starting the live profile. Until then
+`Issue #28` remains open. No payments/public access authorized.
