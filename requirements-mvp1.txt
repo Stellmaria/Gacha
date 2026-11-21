@@ -1,0 +1,2 @@
+# Only isolated MVP-1 backend and PostgreSQL integration tests use this.
+psycopg[binary]>=3.2,<4
