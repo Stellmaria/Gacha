@@ -1,0 +1,114 @@
+{
+  "composition": {
+    "width": 1086,
+    "height": 1448,
+    "duration_seconds": 10.4,
+    "fps": 30
+  },
+  "rotation": {
+    "center": [
+      543,
+      680
+    ],
+    "radius": 432,
+    "start_seconds": 0.65,
+    "stop_seconds": 7.65
+  },
+  "outcomes": [
+    {
+      "name": "Classic",
+      "source_center_degrees": 240,
+      "clockwise_rotation_degrees": 1830,
+      "highlight": "#dcc5ff",
+      "video": "videos/Classic.mp4",
+      "existing_video_preserved": false
+    },
+    {
+      "name": "Elite",
+      "source_center_degrees": 300,
+      "clockwise_rotation_degrees": 2130,
+      "highlight": "#ffafbd",
+      "video": "videos/Elite.mp4",
+      "existing_video_preserved": false
+    },
+    {
+      "name": "Royal",
+      "source_center_degrees": 0,
+      "clockwise_rotation_degrees": 2070,
+      "highlight": "#ffe0a0",
+      "video": "videos/Royal.mp4",
+      "existing_video_preserved": true
+    },
+    {
+      "name": "Epic",
+      "source_center_degrees": 60,
+      "clockwise_rotation_degrees": 2010,
+      "highlight": "#ffc187",
+      "video": "videos/Epic.mp4",
+      "existing_video_preserved": false
+    },
+    {
+      "name": "Mythic",
+      "source_center_degrees": 120,
+      "clockwise_rotation_degrees": 1950,
+      "highlight": "#ebaeff",
+      "video": "videos/Mythic.mp4",
+      "existing_video_preserved": false
+    },
+    {
+      "name": "Eternal",
+      "source_center_degrees": 180,
+      "clockwise_rotation_degrees": 1890,
+      "highlight": "#a3f2ff",
+      "video": "videos/Eternal.mp4",
+      "existing_video_preserved": false
+    }
+  ],
+  "layers": [
+    {
+      "file": "layers/01_background.png",
+      "width": 1086,
+      "height": 1448
+    },
+    {
+      "file": "layers/02_fixed_frame.png",
+      "width": 1086,
+      "height": 1448
+    },
+    {
+      "file": "layers/03_pointer.png",
+      "width": 1086,
+      "height": 1448
+    },
+    {
+      "file": "layers/04_ruby_hub.png",
+      "width": 1086,
+      "height": 1448
+    },
+    {
+      "file": "layers/05_rotating_disk.png",
+      "width": 1200,
+      "height": 1200
+    },
+    {
+      "file": "layers/06_candles.png",
+      "width": 1086,
+      "height": 1448
+    },
+    {
+      "file": "layers/07_petal.png",
+      "width": 80,
+      "height": 88
+    },
+    {
+      "file": "layers/08_button.png",
+      "width": 1086,
+      "height": 1448
+    }
+  ],
+  "viewer": "Velvet_all_outcomes.html",
+  "overview": "All_outcomes_preview.mp4",
+  "deterministic_visual_only": true,
+  "browser_compatibility_verified": false,
+  "telegram_connected": false
+}
