@@ -3,7 +3,7 @@
 - Схема: 2
 - Компоненты: `gacha_core/catalog/approved_cards.json`, `gacha_core/card_store.py`, `tests_python/test_mvp1_card_store.py`, `docs/MVP1_CARDS.md`
 - Приёмка: 7 exact hashes of owner-provided PNGs, metadata, private storage, repeatable catalog import, event excluded from six rarities, no publish of images
-- PR: pending
+- PR: #26
 - Связанные issues: #24
 - Связанные записи: `2026-11-21-mvp1-foundation`
 
@@ -22,3 +22,5 @@
 - `register_approved_cards` idempotently registers original metadata/number and activates six main + one isolated event; refuses overwriting changed card identity. PostgreSQL migration #002 adds card labels and media SHA.
 - CI: existing wheel + new eight offline tests; PG18 migration and real catalog integration test, when available.
 - No Telegram, server or public deployment. Image delivery by SHA-checked bytes is prepared; actual Telegram adapter is separate #25.
+
+- PR #26 local: 89 Python OK (20 skipped without real PostgreSQL/PIL), 16 Node PASS; isolated PG18 CI passed including metadata migration #002 and seven-card registration.
