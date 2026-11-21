@@ -66,7 +66,7 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
     def test_migration_can_be_reapplied_and_version_recorded_once(self):
         apply_migrations(self.db)
         apply_migrations(self.db)
-        self.assertEqual(self.db.execute('SELECT count(*) FROM gacha.schema_migrations').fetchone()[0],1)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM gacha.schema_migrations').fetchone()[0],2)
 
     def test_profile_registered_once_has_ten_daily_and_zero_bonus_wallet(self):
         a=self.core().profile(1001, now=BEFORE)
@@ -177,6 +177,26 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
         with self.assertRaises(psycopg.errors.CheckViolation):
             self.db.execute("INSERT INTO gacha.cards (card_id,kind,rarity,title,is_active) "
                             "VALUES ('missing_art','standard','Elite','Test',true)")
+
+    def test_register_seven_approved_cards_and_event_cannot_drop(self):
+        from unittest.mock import patch
+        from gacha_core.card_store import register_approved_cards, approved_cards, CardAssetError
+        cards = approved_cards()
+        with patch('gacha_core.card_store.verify_private_cards', return_value=cards):
+            self.assertEqual(register_approved_cards(self.db, '/test/private'),7)
+            self.assertEqual(register_approved_cards(self.db, '/test/private'),7)
+            self.assertEqual(self.count('cards'),7)
+            one = self.db.execute('SELECT card_number, character_name, subtitle, media_sha256 '
+                                  'FROM gacha.cards WHERE card_id=%s',('elite_09_tiss',)).fetchone()
+            self.assertEqual(one,(9,'Тисс','Тень цветущих руин',cards[1]['sha256']))
+            self.assertEqual(self.db.execute('SELECT kind,rarity FROM gacha.cards WHERE card_id=%s',
+                                             ('velvet_22_aydan',)).fetchone(), ('event',None))
+            result=self.core(roll=95).spin(1001,uuid4(),now=BEFORE)
+            self.assertEqual((result.rarity,result.card_id),('Eternal','eternal_21_tiffany'))
+            self.assertNotEqual(result.card_id,'velvet_22_aydan')
+            self.db.execute("UPDATE gacha.cards SET title='tampered' WHERE card_id='classic_06_eshmar'")
+            with self.assertRaises(CardAssetError):register_approved_cards(self.db,'/test/private')
+            self.assertEqual(self.count('spins'),1)
 
     def test_no_players_share_history_or_inventory(self):
         self.seed_all_rarities()
