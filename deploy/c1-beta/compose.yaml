@@ -1,0 +1,93 @@
+name: gacha-beta
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: gacha_beta
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/gacha_pg_admin
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    secrets:
+      - gacha_pg_admin
+      - gacha_pg_runtime
+    volumes:
+      - pg_data:/var/lib/postgresql
+      - ./initdb/01-gacha-role.sh:/docker-entrypoint-initdb.d/01-gacha-role.sh:ro
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gacha_beta -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    mem_limit: 1073741824
+    cpus: 1.0
+    pids_limit: 150
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  bot:
+    profiles: ["live"]
+    image: gacha-beta-runtime:python312
+    build:
+      context: ./release
+      dockerfile_inline: |
+        FROM python:3.12-slim
+        ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+        RUN python -m pip install --no-cache-dir "psycopg[binary]>=3.2,<4"
+        WORKDIR /app
+        USER 1000:1000
+        CMD ["python", "-m", "gacha_core.telegram_runtime"]
+    env_file:
+      - ./secrets/runtime.env
+    volumes:
+      - ./release:/app:ro
+      - ./assets:/secure/gacha-assets:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - database
+      - egress
+    user: "1000:1000"
+    working_dir: /app
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 80
+    mem_limit: 536870912
+    cpus: 0.5
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  database:
+    internal: true
+  egress:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.251.240.0/28
+
+volumes:
+  pg_data: {}
+
+secrets:
+  gacha_pg_admin:
+    file: ./secrets/gacha_pg_admin.pass
+  gacha_pg_runtime:
+    file: ./secrets/gacha_pg_runtime.pass
