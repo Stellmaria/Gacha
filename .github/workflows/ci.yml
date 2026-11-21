@@ -83,4 +83,4 @@ jobs:
           python -m gacha_core.migrate
           python -m gacha_core.migrate
       - name: Exercise real PG18 daily quota, duplicate spins, outbox and concurrency
-        run: python -m unittest tests_python.test_mvp1_domain tests_python.test_mvp1_card_store tests_python.test_mvp1_postgres -v
+        run: python -m unittest tests_python.test_mvp1_domain tests_python.test_mvp1_card_store tests_python.test_mvp1_telegram_api tests_python.test_mvp1_telegram_adapter tests_python.test_mvp1_postgres -v

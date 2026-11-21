@@ -66,7 +66,7 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
     def test_migration_can_be_reapplied_and_version_recorded_once(self):
         apply_migrations(self.db)
         apply_migrations(self.db)
-        self.assertEqual(self.db.execute('SELECT count(*) FROM gacha.schema_migrations').fetchone()[0],2)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM gacha.schema_migrations').fetchone()[0],3)
 
     def test_profile_registered_once_has_ten_daily_and_zero_bonus_wallet(self):
         a=self.core().profile(1001, now=BEFORE)
@@ -197,6 +197,65 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
             self.db.execute("UPDATE gacha.cards SET title='tampered' WHERE card_id='classic_06_eshmar'")
             with self.assertRaises(CardAssetError):register_approved_cards(self.db,'/test/private')
             self.assertEqual(self.count('spins'),1)
+
+    def test_bound_telegram_callback_commits_one_spin_then_replays_safely(self):
+        from gacha_core.telegram_intents import SpinIntentService,InvalidCallback
+        self.seed_all_rarities()
+        service=SpinIntentService(self.db,game=self.core())
+        intent=service.prepare(1001,1001,now=BEFORE)
+        service.bind_message(intent.intent_id,1001,1001,881,now=BEFORE)
+        for sender,chat,mid in ((2002,2002,881),(1001,1001,882),(1001,2002,881)):
+            with self.subTest(sender=sender,chat=chat,mid=mid),self.assertRaises(InvalidCallback):
+                service.commit_callback(intent.intent_id,sender,chat,mid,now=BEFORE)
+        self.assertEqual(self.count('spins'),0)
+        first=service.commit_callback(intent.intent_id,1001,1001,881,now=BEFORE)
+        second=service.commit_callback(intent.intent_id,1001,1001,881,now=AFTER)
+        self.assertFalse(first.replay)
+        self.assertTrue(second.replay)
+        self.assertEqual(first.spin_id,second.spin_id)
+        self.assertEqual(self.count('spins'),1)
+        self.assertEqual(self.count('delivery_outbox'),1)
+        self.assertEqual(self.core().profile(1001,now=AFTER).daily_remaining,10)
+        self.assertTrue(service.start_delivery(first.spin_id))
+        self.assertFalse(service.start_delivery(first.spin_id))
+        self.assertEqual(self.db.execute('SELECT state FROM gacha.delivery_outbox WHERE spin_id=%s',
+                                         (first.spin_id,)).fetchone()[0],'uncertain')
+        service.finish_delivery(first.spin_id,881,900)
+        self.assertEqual(self.db.execute('SELECT state,card_message_id FROM gacha.delivery_outbox '
+                                         'WHERE spin_id=%s',(first.spin_id,)).fetchone(),('sent',900))
+        self.assertFalse(service.start_delivery(first.spin_id))
+        with self.assertRaises(GameError):service.finish_delivery(first.spin_id,881,999)
+
+    def test_telegram_button_expiry_without_attempt_charge(self):
+        from datetime import timedelta
+        from gacha_core.telegram_intents import SpinIntentService,InvalidCallback
+        self.seed_all_rarities()
+        service=SpinIntentService(self.db,game=self.core())
+        intent=service.prepare(1001,1001,now=BEFORE)
+        service.bind_message(intent.intent_id,1001,1001,123,now=BEFORE)
+        with self.assertRaises(InvalidCallback):
+            service.commit_callback(intent.intent_id,1001,1001,123,
+                                    now=BEFORE+timedelta(minutes=16))
+        self.assertEqual(self.count('spins'),0)
+        self.assertEqual(self.count('delivery_outbox'),0)
+
+    def test_telegram_concurrent_same_callback_one_draw(self):
+        from gacha_core.telegram_intents import SpinIntentService
+        self.seed_all_rarities()
+        starter=SpinIntentService(self.db,game=self.core())
+        intent=starter.prepare(1001,1001,now=BEFORE)
+        starter.bind_message(intent.intent_id,1001,1001,333,now=BEFORE)
+        def attempt(_):
+            with psycopg.connect(DSN,autocommit=True) as db:
+                game=GameCore(db,rng=lambda upper:0)
+                return SpinIntentService(db,game=game).commit_callback(intent.intent_id,1001,1001,333,now=BEFORE)
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            results=list(pool.map(attempt,range(6)))
+        self.assertEqual(len({x.spin_id for x in results}),1)
+        self.assertEqual(sum(x.replay for x in results),5)
+        self.assertEqual(self.count('spins'),1)
+        self.assertEqual(self.count('delivery_outbox'),1)
+        self.assertEqual(starter.game.profile(1001,now=BEFORE).daily_remaining,9)
 
     def test_no_players_share_history_or_inventory(self):
         self.seed_all_rarities()

@@ -177,18 +177,20 @@ def _multipart(token: str, method: str, fields: dict[str, object], blob: bytes,
     return response_value
 
 
-def edit_to_animation(token: str, chat_id: int, cover_mid: int, name: str, data: bytes) -> dict:
+def edit_to_animation(token: str, chat_id: int, cover_mid: int, name: str, data: bytes,
+                      *, caption: str = SPINNING_CAPTION) -> dict:
     return _multipart(token, 'editMessageMedia', {
         'chat_id': chat_id, 'message_id': cover_mid,
         'media': {'type': 'animation', 'media': 'attach://wheel_mp4',
-                  'caption': SPINNING_CAPTION, 'duration': 11, 'width': 720, 'height': 960},
+                  'caption': caption, 'duration': 11, 'width': 720, 'height': 960},
         'reply_markup': {'inline_keyboard': []},
     }, data, filename=f'{name.lower()}-wheel.mp4')
 
 
-def send_animation_fallback(token: str, chat_id: int, name: str, data: bytes) -> dict:
+def send_animation_fallback(token: str, chat_id: int, name: str, data: bytes,
+                            *, caption: str = SPINNING_CAPTION) -> dict:
     return _multipart(token, 'sendAnimation', {
-        'chat_id': chat_id, 'caption': SPINNING_CAPTION,
+        'chat_id': chat_id, 'caption': caption,
         'duration': 11, 'width': 720, 'height': 960,
     }, data, filename=f'{name.lower()}-wheel.mp4')
 
