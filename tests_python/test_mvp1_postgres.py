@@ -257,6 +257,73 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
         self.assertEqual(self.count('delivery_outbox'),1)
         self.assertEqual(starter.game.profile(1001,now=BEFORE).daily_remaining,9)
 
+    def test_closed_beta_whole_telegram_cycle_and_duplicate_replay(self):
+        from unittest.mock import patch
+        from gacha_core.telegram_adapter import TelegramGameAdapter,SPIN_PREFIX
+        from tests_python.test_mvp1_telegram_adapter import DummyClient
+        self.seed_all_rarities(include_event=True)
+        client=DummyClient()
+        handler=TelegramGameAdapter(self.db,client,'/private/gacha-fixture',
+                                    game=self.core(roll=0),sleeper=lambda _:None)
+        command={'message':{'text':'/spin','from':{'id':1001,'is_bot':False},
+                            'chat':{'id':1001,'type':'private'}}}
+        with patch('gacha_core.card_store.verify_private_cards',return_value=()), \
+             patch('gacha_core.telegram_adapter.video_bytes',return_value=b'original-mp4'), \
+             patch('gacha_core.telegram_adapter.image_for_card',return_value=b'fixture-image'):
+            self.assertEqual(handler.handle_update(command,now=BEFORE).category,'ready')
+            prepared=[x for x in client.events if x[0]=='cover'][-1]
+            self.assertTrue(prepared[3].startswith(SPIN_PREFIX))
+            clicked={'callback_query':{'id':'q','data':prepared[3], 'from':{'id':1001},
+                      'message':{'message_id':55,'chat':{'id':1001,'type':'private'}}}}
+            self.assertEqual(handler.handle_update(clicked,now=BEFORE).category,'delivered')
+            count_after=len(client.events)
+            self.assertEqual(handler.handle_update(clicked,now=BEFORE).category,'replayed')
+            self.assertEqual(len([e for e in client.events if e[0]=='wheel']),1)
+            self.assertEqual(len([e for e in client.events if e[0]=='card']),1)
+            self.assertEqual(len(client.events),count_after+1)  # callback ACK only
+            self.assertEqual(self.count('spins'),1)
+            self.assertEqual(self.count('delivery_outbox'),1)
+            self.assertEqual(handler.game.profile(1001,now=BEFORE).daily_remaining,9)
+            self.assertEqual(handler.game.collection(1001), [('test_classic','standard','Classic',1)])
+            self.assertEqual(self.db.execute('SELECT state,card_message_id FROM gacha.delivery_outbox').fetchone(),('sent',77))
+            self.assertEqual(handler.handle_update(command,now=BEFORE).category,'ready')
+            again=[x for x in client.events if x[0]=='cover'][-1][3]
+            clicked['callback_query']['data']=again
+            self.assertEqual(handler.handle_update(clicked,now=BEFORE).category,'delivered')
+        self.assertEqual(self.count('spins'),2)
+        self.assertEqual(handler.game.collection(1001), [('test_classic','standard','Classic',2)])
+        self.assertEqual(handler.game.profile(1001,now=BEFORE).daily_remaining,8)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM gacha.player_cards WHERE card_id='test_velvet_event'").fetchone()[0],0)
+
+    def test_closed_beta_ambiguous_delivery_keeps_reward_no_resend(self):
+        from unittest.mock import patch
+        from gacha_core.telegram_adapter import TelegramGameAdapter
+        from tests_python.test_mvp1_telegram_adapter import DummyClient
+        self.seed_all_rarities()
+        client=DummyClient()
+        handler=TelegramGameAdapter(self.db,client,'/private/gacha-fixture',
+                                    game=self.core(roll=0),sleeper=lambda _:None)
+        command={'message':{'text':'/spin','from':{'id':1001,'is_bot':False},
+                            'chat':{'id':1001,'type':'private'}}}
+        with patch('gacha_core.card_store.verify_private_cards',return_value=()), \
+             patch('gacha_core.telegram_adapter.video_bytes',return_value=b'original-mp4'), \
+             patch('gacha_core.telegram_adapter.image_for_card',return_value=b'fixture-image'):
+            handler.handle_update(command,now=BEFORE)
+            data=[x for x in client.events if x[0]=='cover'][-1][3]
+            clicked={'callback_query':{'id':'q','data':data,'from':{'id':1001},
+                 'message':{'message_id':55,'chat':{'id':1001,'type':'private'}}}}
+            original=client.send_card
+            def timeout(*args):raise TimeoutError('ambiguous delivery')
+            client.send_card=timeout
+            with self.assertRaises(TimeoutError):handler.handle_update(clicked,now=BEFORE)
+            self.assertEqual(self.db.execute('SELECT state FROM gacha.delivery_outbox').fetchone()[0],'uncertain')
+            self.assertEqual(handler.game.collection(1001), [('test_classic','standard','Classic',1)])
+            self.assertEqual(handler.game.profile(1001,now=BEFORE).daily_remaining,9)
+            client.send_card=original
+            self.assertEqual(handler.handle_update(clicked,now=BEFORE).category,'replayed')
+        self.assertEqual(len([x for x in client.events if x[0]=='card']),0)
+        self.assertEqual(self.count('spins'),1)
+
     def test_no_players_share_history_or_inventory(self):
         self.seed_all_rarities()
         self.core().spin(1001,uuid4(),now=BEFORE)
