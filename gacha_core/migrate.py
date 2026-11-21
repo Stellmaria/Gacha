@@ -20,11 +20,19 @@ def apply_migrations(conn) -> None:
             exists = conn.execute('SELECT 1 FROM gacha.schema_migrations WHERE version = %s', (name,)).fetchone()
             if exists:
                 continue
-            sql = path.read_text(encoding='utf-8').strip()
-            if not sql.startswith('BEGIN;') or not sql.endswith('COMMIT;'):
-                raise RuntimeError('Migration must be transaction-wrapped')
-            sql = sql[len('BEGIN;'):-len('COMMIT;')].strip()
-            conn.execute(sql, prepare=False)
+            sql = path.read_text(encoding='utf-8')
+            # Leading SQL comments are allowed. Remove only the two exact
+            # transaction-control lines: the caller owns the DB transaction.
+            lines = sql.splitlines()
+            begins = [i for i, line in enumerate(lines) if line.strip() == 'BEGIN;']
+            commits = [i for i, line in enumerate(lines) if line.strip() == 'COMMIT;']
+            if len(begins) != 1 or len(commits) != 1 or begins[0] >= commits[0]:
+                raise RuntimeError('Migration must contain a single BEGIN/COMMIT pair')
+            body = '\n'.join(line for i, line in enumerate(lines)
+                             if i not in (begins[0], commits[0])).strip()
+            if not body:
+                raise RuntimeError('Migration cannot be empty')
+            conn.execute(body, prepare=False)
             conn.execute('INSERT INTO gacha.schema_migrations (version) VALUES (%s)', (name,))
 
 
