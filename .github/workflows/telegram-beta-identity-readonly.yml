@@ -1,0 +1,39 @@
+name: Gacha beta bot identity · READ-ONLY manual preflight
+
+# Does not poll updates, mutate webhook, send Telegram messages or start a bot.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gacha-beta-identity-readonly
+  cancel-in-progress: false
+
+jobs:
+  verify-bot-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read-only getMe/getWebhookInfo with approved test-bot secret
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+          GACHA_EXPECTED_BOT_USERNAME: velvet_gacha_v1_bot
+        run: |
+          python - <<'PY'
+          import os,sys
+          from gacha_core.beta_preflight import check_telegram
+          result=check_telegram(os.environ.get('GACHA_BOT_TOKEN',''),
+                                os.environ.get('GACHA_EXPECTED_BOT_USERNAME',''))
+          for item in result:
+              print(f'{item.name}: {"PASS" if item.ok else "BLOCKED"} — {item.detail}')
+          sys.exit(0 if len(result)==2 and all(item.ok for item in result) else 1)
+          PY
