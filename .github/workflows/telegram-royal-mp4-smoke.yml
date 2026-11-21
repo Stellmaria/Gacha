@@ -1,0 +1,33 @@
+name: Velvet Wheel approved Royal MP4 — MANUAL TELEGRAM TEST
+
+# ONLY operator-triggered: use the existing ordinary Telegram test-purpose bot.
+# Requires one fresh private /royaltest command before workflow_dispatch.
+# Does not post to anyone else, create persistent poller, or grant/sell cards.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gacha-existing-bot-inline-demo
+  cancel-in-progress: false
+
+jobs:
+  approved-royal-mp4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact approved Royal MP4 and safe manual Telegram sequence offline
+        run: python -m unittest tests_python.test_telegram_royal_mp4_smoke -v
+      - name: ONE authorized private-chat Royal preview via the existing bot
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+        run: python -m scripts.telegram_royal_mp4_smoke
