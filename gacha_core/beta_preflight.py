@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
-from typing import Any
 
 from gacha_core.card_store import approved_cards, verify_private_cards, CardAssetError
 from scripts.telegram_wheel6_smoke import verify_original_assets

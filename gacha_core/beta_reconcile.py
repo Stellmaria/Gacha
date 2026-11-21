@@ -5,7 +5,6 @@ never reveals Telegram IDs, private image bytes, player names or tokens.
 """
 from __future__ import annotations
 
-from collections import Counter
 import json
 import os
 

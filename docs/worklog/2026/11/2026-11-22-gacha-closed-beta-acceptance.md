@@ -3,7 +3,7 @@
 - Схема: 2
 - Компоненты: `gacha_core/beta_preflight.py`, `gacha_core/beta_reconcile.py`, `scripts/mvp1_backup_restore_ci.sh`, `tests_python/test_mvp1_beta_preflight.py`, `.github/workflows/ci.yml`, `docs/MVP1_CLOSED_BETA.md`
 - Приёмка: private original 7 PNG SHA verified, PG18 isolated backup/restore test, secure fail-closed preflight, sanitized operator reconciliation, all existing Python/Node/Gacha CI, no unauthorized live Telegram or production deployment
-- PR: pending
+- PR: #29
 - Связанные issues: #28
 - Связанные записи: `2026-11-21-mvp1-foundation`, `2026-11-22-seven-approved-private-cards`, `2026-11-22-mvp1-telegram-adapter`
 
@@ -25,3 +25,9 @@
 - Added two complete PostgreSQL 18 mocked-transport e2e tests: original six rarity selection, callback replay, real DB inventory/daily decrement/doubles and ambiguous delivery quarantine.
 - Local WSL: 120 Python tests OK (25 intentionally skipped for missing real PG/PIL runtime), 16 Node tests PASS, compile+diff PASS; backup script hard-rejects non-CI invocation.
 - No new PostgreSQL roles, services, CI-02 runner changes, Gacha production deployment, persistent polling, or message sending.
+
+## GitHub Actions evidence
+
+- PR #29 first CI on PostgreSQL 18: isolated backup/restoration **PASS** (`PG18 RESTORE DRILL PASS: 3 migrations, player, balance, inventory, outbox, no double charge`).
+- Existing wheel-tests PASS, PostgreSQL integration PASS; optional GIF render is skipped on push and will run for PR.
+- No independent PG18 host or approved operational secret provisioned; no persistent Telegram poller started; no actual media sent.
