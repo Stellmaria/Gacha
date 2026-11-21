@@ -42,3 +42,53 @@ A manual read-only bot identity workflow `.github/workflows/telegram-beta-identi
 - Public release, payments, Stars, advent event distribution: **NOT AUTHORIZED**.
 
 Do not close #28 or announce a running beta until the last two acceptance blockers are completed with live evidence. This issue does not automatically authorize unsafe production access or a second Telegram poller.
+
+## Production-host closed-beta safety gate (#28)
+
+The initial production install is **closed beta only**, not a public launch. The
+runtime must refuse to poll until `GACHA_BETA_ALLOWED_USER_IDS` contains 2–20
+**distinct numeric Telegram user IDs**, comma-separated with no spaces. IDs are
+private operator configuration (not committed, not printed in issue/CI/logs).
+The Telegram adapter rejects both ordinary messages and callbacks from anyone
+not in that allowlist **before DB writes or media requests**. The read-only
+preflight reports allowlist presence and tester count, never actual IDs.
+
+The opt-in systemd template is `deploy/systemd/gacha-beta.service`. Merely
+adding this template to GitHub neither installs nor enables the unit. It expects
+a dedicated `gacha` OS service identity, a verified code checkout at
+`/opt/gacha/current`, a virtualenv at `/opt/gacha/venv`, protected
+`/etc/gacha/beta.env` (permissions 0600) and read-only, owner-approved
+cards in `GACHA_PRIVATE_CARD_ROOT` outside the checkout. A dedicated
+PostgreSQL **18** database/role and rollback-tested backup are mandatory.
+Install nothing on Velvet's canonical runtime checkout or CI runners.
+The production host must be selected and inspected before using this unit.
+
+Operator order of operations (do **not** skip gates):
+
+1. Select a separately administered host without sharing Velvet/Diamond
+   database or VPN/CI service roles; inspect memory, disk, backups, firewall.
+2. Verify a dedicated PostgreSQL 18 target and non-superuser Gacha role.
+   Stage an encrypted restorable backup before any migrations. Apply only
+   migrations 001–003 against the exact expected `gacha_beta` DB.
+3. Transfer the **original** owner-approved ZIP through a private channel;
+   verify seven SHA-256 hashes and register the seven catalog records.
+   No replacement artwork or public GitHub image artifacts.
+4. Securely provision the bot token on the host, verify exact bot username
+   and webhook absence. The existing test bot is also used by manual
+   GitHub Actions Telegram workflows: hand off exclusive `getUpdates`
+   ownership and suspend overlapping manual runs **before** polling.
+5. Set `GACHA_EXPECTED_DATABASE_NAME=gacha_beta`,
+   `GACHA_EXPECTED_BOT_USERNAME`, `GACHA_DATABASE_URL`,
+   `GACHA_BOT_TOKEN`, `GACHA_PRIVATE_CARD_ROOT`,
+   `GACHA_BETA_ALLOWED_USER_IDS` and only then
+   `GACHA_ENABLE_POLLING=YES` in the protected env file.
+6. Run `python -m gacha_core.beta_preflight --online`, inspect every PASS.
+   Install the systemd unit but **do not enable/start it** if any preflight
+   finding is BLOCKED or another Telegram poller may be active.
+7. Start one supervised service; run the two-tester private Telegram
+   acceptance checklist above and `python -m gacha_core.beta_reconcile`.
+   If acceptance fails, stop the service while preserving DB, cards and
+   outbox for review; never blindly repeat an ambiguous Telegram delivery.
+
+No card trading, Stars, shop, paid mechanics, public announcement or event
+card #22 drops are authorized by the beta deployment.
