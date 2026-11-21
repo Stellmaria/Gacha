@@ -1,0 +1,32 @@
+name: Velvet Wheel · six approved MP4 outcomes — MANUAL TELEGRAM DEMO
+
+# Manual only. Requires one fresh /wheel6 in the existing test-purpose bot.
+# No payments, wallet changes, grants, background pollers or production deploy.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gacha-existing-bot-inline-demo
+  cancel-in-progress: false
+
+jobs:
+  six-outcome-telegram-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify all approved MP4 bytes and safe Telegram UI flow offline
+        run: python -m unittest tests_python.test_telegram_wheel6_smoke -v
+      - name: One manual private chat spin with original approved wheel
+        env:
+          GACHA_BOT_TOKEN: ${{ secrets.GACHA_TEST_BOT_TOKEN }}
+        run: python -m scripts.telegram_wheel6_smoke
