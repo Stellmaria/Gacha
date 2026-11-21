@@ -3,7 +3,7 @@
 - Схема: 2
 - Компоненты: `scripts/telegram_wheel6_smoke.py`, `tests_python/test_telegram_wheel6_smoke.py`, `.github/workflows/telegram-wheel6-smoke.yml`
 - Приёмка: 6 оригинальных проверенных MP4; серверные веса 25/22/19/16/11/7; безопасная доставка и редактирование сообщения; bounded fallback; callbacks/CI; ручная живая приёмка отдельно
-- PR: pending
+- PR: #21
 - Связанные issues: `#20`
 - Связанные записи: `docs/worklog/2026/11/2026-11-21-royal-mp4-chat-smoke.md`, `docs/WHEEL_ALL_OUTCOMES_IMPORT_2026-11-21.md`
 
