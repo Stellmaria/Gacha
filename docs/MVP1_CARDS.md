@@ -28,3 +28,41 @@ Source: seven exact PNG images supplied directly by the owner in the Gacha proje
 Migration `002_card_catalog_metadata.sql` adds `card_number`, `character_name`, `subtitle` and `media_sha256`. Imports are idempotent and reject altered identities. In the absence of the private archive, **no cards are seeded, activated, or issued**. Inventory duplicates remain accounted by `gacha.player_cards.quantity`.
 
 Import readiness is not a claim of a running bot or live delivery. A durable Telegram adapter is tracked separately as #25 and requires a private asset installation and a deployment decision.
+
+## Temporary closed-beta card set — 2026-11-22
+
+Owner clarified that the seven character cards are **test assets**, not final
+art. For Issue #28 only, the approved beta files are seven PNGs located in
+the owner's Windows Downloads (one each for Classic/Эшмар, Elite/Тисс,
+Royal/Один, Epic/Калли, Mythic/Элис, Eternal/Тиффани and Velvet/Эйдан).
+They were checked as PNGs, had dimensions 1024×1535/1536, and all seven
+byte sizes and SHA-256 are pinned in `approved_cards.json`.
+The previous image hashes represent an earlier provisional set and are not
+valid for the currently selected test bundle.
+
+The owner-controlled **private** archive is called
+`Gacha_MVP1_7_beta_test_cards_private.zip` and lives in Windows Downloads.
+It contains exactly seven named `cards/<card_id>.png` files,
+`manifest.json` and `README.txt`. The binary art must stay outside public
+GitHub, CI artifacts and issues. An extra duplicate copy of Odin exists in
+Downloads; the archive includes one byte-identical copy only.
+
+**Do not interpret this test manifest as final art approval.** A replacement
+with final cards will require an explicit new version, preservation of
+existing `card_id` identity/inventory compatibility, and a reviewed
+migration and acceptance plan rather than silently overwriting recorded
+player inventory.
+
+For C1 staging, a private operator must transport the ZIP through an
+authorized non-public file channel to
+`/home/velvet/gacha-beta/` (outside the checkout), apply permissions 0600,
+and validate/install it with `gacha_core.card_store` against the exact
+active Git SHA. A local Windows ZIP by itself does not prove its presence on
+C1. Run the fail-closed beta preflight and require successful
+`private_cards` and `card_registry` checks before enabling Telegram
+polling. The owner enters the token directly into the protected C1
+`secrets/runtime.env`; neither that token nor the private tester IDs are
+committed to the repository.
+
+See [#28](https://github.com/Stellmaria/Gacha/issues/28) and
+[closed beta runbook](MVP1_CLOSED_BETA.md).
