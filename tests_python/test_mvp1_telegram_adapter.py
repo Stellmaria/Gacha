@@ -39,8 +39,20 @@ class TelegramAdapterContractTests(unittest.TestCase):
         self.game=Mock()
         self.game.profile.return_value=SimpleNamespace(player_id=7,daily_remaining=10,bonus_remaining=1,wallet_balance=0)
         self.game.collection.return_value=[]
-        self.handler=t.TelegramGameAdapter(Mock(),self.client,'/no-real-files',game=self.game,sleeper=lambda s:self.client.events.append(('sleep',s)))
+        self.handler=t.TelegramGameAdapter(Mock(),self.client,'/no-real-files',allowed_user_ids={101},game=self.game,sleeper=lambda s:self.client.events.append(('sleep',s)))
         self.handler.intents=Mock()
+
+    def test_closed_beta_blocks_unlisted_users_before_db_or_telegram(self):
+        for command in ('/start', '/profile', '/spin', '/cards', '/history'):
+            outcome=self.handler.handle_update(user_message(command,uid=202),now=NOW)
+            self.assertEqual(outcome.category,'closed_beta')
+        outcome=self.handler.handle_update(callback(uuid4(),uid=202),now=NOW)
+        self.assertEqual(outcome.category,'closed_beta')
+        self.game.profile.assert_not_called()
+        self.game.collection.assert_not_called()
+        self.handler.intents.prepare.assert_not_called()
+        self.handler.intents.commit_callback.assert_not_called()
+        self.assertEqual(self.client.events,[])
 
     def test_private_chat_required_for_all_commands(self):
         for update in (user_message('/start',chat=999),user_message('/spin',typ='group'),
@@ -160,8 +172,13 @@ class TelegramAdapterContractTests(unittest.TestCase):
     def test_runtime_requires_explicit_operators_gates(self):
         with self.assertRaises(RuntimeError):verify_operator_environment({})
         env={'GACHA_ENABLE_POLLING':'YES','GACHA_BOT_TOKEN':'123:verySecretToken','GACHA_DATABASE_URL':'postgres://test',
-             'GACHA_PRIVATE_CARD_ROOT':'/private/cards','GACHA_EXPECTED_BOT_USERNAME':'velvet_gacha_v1_bot','GACHA_EXPECTED_DATABASE_NAME':'gacha_beta'}
+             'GACHA_PRIVATE_CARD_ROOT':'/private/cards','GACHA_EXPECTED_BOT_USERNAME':'velvet_gacha_v1_bot','GACHA_EXPECTED_DATABASE_NAME':'gacha_beta',
+             'GACHA_BETA_ALLOWED_USER_IDS':'101,202'}
         self.assertEqual(verify_operator_environment(env)[3:5],('velvet_gacha_v1_bot','gacha_beta'))
+        self.assertEqual(verify_operator_environment(env)[-1],frozenset({101,202}))
+        for invalid in ('','101','101,101','101, 202','-1,202','0,202','101,202,101'):
+            with self.subTest(allowed=invalid),self.assertRaises(RuntimeError):
+                verify_operator_environment({**env,'GACHA_BETA_ALLOWED_USER_IDS':invalid})
         with self.assertRaises(RuntimeError):verify_operator_environment({**env,'GACHA_EXPECTED_BOT_USERNAME':''})
         with self.assertRaises(RuntimeError):verify_operator_environment({**env,'GACHA_EXPECTED_DATABASE_NAME':'velvet'})
 

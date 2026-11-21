@@ -19,7 +19,20 @@ from gacha_core.telegram_api import api
 LOCK_ID = 20261122
 
 
-def verify_operator_environment(env: dict) -> tuple[str,str,Path,str]:
+def parse_beta_allowed_user_ids(raw: str) -> frozenset[int]:
+    """Require 2–20 distinct owner-approved Telegram user IDs, fail closed."""
+    items = raw.split(',') if isinstance(raw, str) else []
+    if not 2 <= len(items) <= 20 or any(
+        not re.fullmatch(r'[1-9][0-9]{0,18}', item) for item in items
+    ):
+        raise RuntimeError('Closed beta requires 2-20 comma-separated Telegram user IDs')
+    ids = frozenset(int(item) for item in items)
+    if len(ids) != len(items) or any(uid > 9223372036854775807 for uid in ids):
+        raise RuntimeError('Closed beta tester IDs must be unique and valid')
+    return ids
+
+
+def verify_operator_environment(env: dict) -> tuple[str,str,Path,str,str,frozenset[int]]:
     if env.get('GACHA_ENABLE_POLLING') != 'YES':
         raise RuntimeError('Persistent bot disabled: explicit GACHA_ENABLE_POLLING=YES required')
     token=env.get('GACHA_BOT_TOKEN','')
@@ -27,17 +40,18 @@ def verify_operator_environment(env: dict) -> tuple[str,str,Path,str]:
     username=env.get('GACHA_EXPECTED_BOT_USERNAME','')
     root=env.get('GACHA_PRIVATE_CARD_ROOT','')
     database_name=env.get('GACHA_EXPECTED_DATABASE_NAME','')
+    allowed_users=parse_beta_allowed_user_ids(env.get('GACHA_BETA_ALLOWED_USER_IDS',''))
     if (not re.fullmatch(r'[a-z][a-z0-9_]{2,62}', database_name) or
             database_name in {'postgres','velvet','diamond','template0','template1'}):
         raise RuntimeError('Dedicated expected Gacha database name is required')
     if (not re.fullmatch(r'\d+:[a-zA-Z0-9_-]{10,}',token) or
             not dsn or not root or not re.fullmatch(r'[a-zA-Z0-9_]{5,32}',username)):
         raise RuntimeError('Required private Gacha bot/db/cards configuration missing')
-    return token,dsn,Path(root),username,database_name
+    return token,dsn,Path(root),username,database_name,allowed_users
 
 
 def run() -> None:
-    token,dsn,root,expected,expected_db=verify_operator_environment(os.environ)
+    token,dsn,root,expected,expected_db,allowed_users=verify_operator_environment(os.environ)
     # Refuse to start if any of the seven owner-approved originals are missing.
     approved=verify_private_cards(root)
     import psycopg
@@ -68,7 +82,7 @@ def run() -> None:
         if not isinstance(hook,dict) or hook.get('url'):
             raise RuntimeError('Webhook already configured; polling would conflict')
         transport=TelegramClient(token)
-        handler=TelegramGameAdapter(db,transport,root)
+        handler=TelegramGameAdapter(db,transport,root,allowed_user_ids=allowed_users)
         row=db.execute('SELECT last_update_id FROM gacha.telegram_poll_cursor WHERE singleton=true').fetchone()
         if row is None:
             # First boot: discard pre-existing commands/callbacks instead of

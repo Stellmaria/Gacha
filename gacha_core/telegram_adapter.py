@@ -86,10 +86,12 @@ class TelegramClient:
 
 class TelegramGameAdapter:
     def __init__(self, db, telegram: TelegramClient, private_root: str | Path,
-                 *, sleeper=time.sleep, game: GameCore | None = None):
+                 *, allowed_user_ids: frozenset[int] | set[int] = frozenset(),
+                 sleeper=time.sleep, game: GameCore | None = None):
         self.db=db
         self.telegram=telegram
         self.private_root=private_root
+        self.allowed_user_ids=frozenset(allowed_user_ids)
         self.sleeper=sleeper
         self.game=game or GameCore(db)
         self.intents=SpinIntentService(db,game=self.game)
@@ -128,7 +130,10 @@ class TelegramGameAdapter:
                     sender.get('is_bot') is not False or chat.get('type')!='private' or
                     type(sender.get('id')) is not int or sender['id']!=chat.get('id')):
                 return TelegramOutcome(False,'not_private')
-            uid=sender['id'];text=msg.get('text')
+            uid=sender['id']
+            if uid not in self.allowed_user_ids:
+                return TelegramOutcome(False,'closed_beta')
+            text=msg.get('text')
             if not isinstance(text,str):return TelegramOutcome(False,'not_text')
             if text in ('/start','👤 Мой профиль','/profile'):
                 self.telegram.send_text(uid,self._profile_text(uid,timestamp),menu=True)
@@ -171,6 +176,8 @@ class TelegramGameAdapter:
                 not isinstance(callback_id,str) or not callback_id):
             return TelegramOutcome(False,'unauthorized_callback')
         uid=sender['id'];mid=message['message_id']
+        if uid not in self.allowed_user_ids:
+            return TelegramOutcome(False,'closed_beta')
         try:
             result=self.intents.commit_callback(UUID(hex=data[len(SPIN_PREFIX):]),uid,uid,mid,now=timestamp)
         except InvalidCallback:

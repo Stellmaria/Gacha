@@ -141,10 +141,23 @@ def check_telegram(token: str, expected_username: str) -> tuple[Check, ...]:
     return tuple(checks)
 
 
+def check_beta_access(raw: str | None) -> Check:
+    from gacha_core.telegram_runtime import parse_beta_allowed_user_ids
+    try:
+        allowed = parse_beta_allowed_user_ids(raw or '')
+    except RuntimeError:
+        return Check('closed_beta_access', False,
+                     'At least two distinct approved tester IDs required')
+    return Check('closed_beta_access', True,
+                 f'Explicit allowlist configured for {len(allowed)} closed-beta testers')
+
+
 def run_preflight(private_root: str | Path | None, db=None,
                   expected_database: str | None=None, *, online: bool=False,
-                  token: str | None=None, username: str | None=None) -> tuple[Check,...]:
+                  token: str | None=None, username: str | None=None,
+                  allowed_user_ids: str | None=None) -> tuple[Check,...]:
     findings=list(offline_assets_check(private_root))
+    findings.append(check_beta_access(allowed_user_ids))
     if db is None or not expected_database:
         findings.append(Check('database',False,'No dedicated Gacha PostgreSQL connection configured'))
     else:
@@ -178,7 +191,8 @@ def main() -> int:
         checks=run_preflight(args.private_root or os.environ.get('GACHA_PRIVATE_CARD_ROOT'),
              conn,os.environ.get('GACHA_EXPECTED_DATABASE_NAME'),online=args.online,
              token=os.environ.get('GACHA_BOT_TOKEN'),
-             username=os.environ.get('GACHA_EXPECTED_BOT_USERNAME'))
+             username=os.environ.get('GACHA_EXPECTED_BOT_USERNAME'),
+             allowed_user_ids=os.environ.get('GACHA_BETA_ALLOWED_USER_IDS'))
     finally:
         if conn is not None:conn.close()
     print(json.dumps({'ready':all(c.ok for c in checks),

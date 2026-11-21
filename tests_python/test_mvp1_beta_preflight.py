@@ -55,6 +55,15 @@ class BetaPreflightTests(unittest.TestCase):
         self.assertFalse(any('DELETE ' in q.upper() or 'UPDATE ' in q.upper()
                              for q in db.cur.calls))
 
+    def test_closed_beta_access_is_explicit_and_redacted(self):
+        self.assertFalse(p.check_beta_access(None).ok)
+        self.assertFalse(p.check_beta_access('101').ok)
+        self.assertFalse(p.check_beta_access('101,101').ok)
+        result=p.check_beta_access('101,202')
+        self.assertTrue(result.ok)
+        self.assertNotIn('101',result.detail)
+        self.assertNotIn('202',result.detail)
+
     def test_refuses_wrong_database_and_superuser_pg17(self):
         for kw in ({'db':'velvet'}, {'role':'postgres','superuser':True}, {'version':170000},
                    {'ambiguous':2}, {'migrations':False}):

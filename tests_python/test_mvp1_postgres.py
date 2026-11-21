@@ -264,7 +264,7 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
         self.seed_all_rarities(include_event=True)
         client=DummyClient()
         handler=TelegramGameAdapter(self.db,client,'/private/gacha-fixture',
-                                    game=self.core(roll=0),sleeper=lambda _:None)
+                                    allowed_user_ids={1001,1002},game=self.core(roll=0),sleeper=lambda _:None)
         command={'message':{'text':'/spin','from':{'id':1001,'is_bot':False},
                             'chat':{'id':1001,'type':'private'}}}
         with patch('gacha_core.card_store.verify_private_cards',return_value=()), \
@@ -302,7 +302,7 @@ class MVP1PostgresIntegrationTests(unittest.TestCase):
         self.seed_all_rarities()
         client=DummyClient()
         handler=TelegramGameAdapter(self.db,client,'/private/gacha-fixture',
-                                    game=self.core(roll=0),sleeper=lambda _:None)
+                                    allowed_user_ids={1001,1002},game=self.core(roll=0),sleeper=lambda _:None)
         command={'message':{'text':'/spin','from':{'id':1001,'is_bot':False},
                             'chat':{'id':1001,'type':'private'}}}
         with patch('gacha_core.card_store.verify_private_cards',return_value=()), \
