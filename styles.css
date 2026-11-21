@@ -97,3 +97,11 @@ footer { text-align: center; font-size: 11px; color: #866f80; margin-top: 19px; 
   .wheel { transition-duration: 60ms !important; }
   .spin { transition: none; }
 }
+
+/* Velvet wheel: standalone six-outcome visual demo. */
+.new-wheel{margin:0 auto 24px;max-width:900px;padding:24px 26px;text-align:center;border:1px solid #a66c4b;border-radius:18px;background:linear-gradient(135deg,#2a0c1a,#110a11 64%,#30201d);box-shadow:0 0 40px #7d1f3b22}
+.new-wheel h2{font-family:Georgia,serif;font-weight:500;font-size:clamp(1.35rem,4vw,2rem);color:#f2d6b6;margin:10px 0}
+.new-wheel p{color:#dcbfae;line-height:1.55}
+.new-wheel-link{display:inline-block;margin:10px auto;padding:15px 25px;background:linear-gradient(135deg,#6b0e29,#a82e4b,#4b091f);border:1px solid #e9a56d;border-radius:999px;color:#ffebcf;text-decoration:none;font-weight:700;letter-spacing:.035em;box-shadow:0 0 25px #a41c3e66}
+.new-wheel-link:hover,.new-wheel-link:focus-visible{background:linear-gradient(135deg,#a02c4d,#ce526a,#772138);outline:2px solid #f6c59e;outline-offset:3px}
+.new-wheel .new-wheel-note{font-size:.84rem;opacity:.75}

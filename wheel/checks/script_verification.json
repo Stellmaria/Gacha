@@ -1,0 +1,69 @@
+{
+  "scriptIntegration": "PASS",
+  "outcomes": [
+    {
+      "outcome": "Classic",
+      "rotationDegrees": 1830,
+      "topSector": "Classic",
+      "headerAndButton": "PASS",
+      "start": "PASS",
+      "replay": "PASS",
+      "fixedRubyAndPointer": "PASS"
+    },
+    {
+      "outcome": "Elite",
+      "rotationDegrees": 2130,
+      "topSector": "Elite",
+      "headerAndButton": "PASS",
+      "start": "PASS",
+      "replay": "PASS",
+      "fixedRubyAndPointer": "PASS"
+    },
+    {
+      "outcome": "Royal",
+      "rotationDegrees": 2070,
+      "topSector": "Royal",
+      "headerAndButton": "PASS",
+      "start": "PASS",
+      "replay": "PASS",
+      "fixedRubyAndPointer": "PASS"
+    },
+    {
+      "outcome": "Epic",
+      "rotationDegrees": 2010,
+      "topSector": "Epic",
+      "headerAndButton": "PASS",
+      "start": "PASS",
+      "replay": "PASS",
+      "fixedRubyAndPointer": "PASS"
+    },
+    {
+      "outcome": "Mythic",
+      "rotationDegrees": 1950,
+      "topSector": "Mythic",
+      "headerAndButton": "PASS",
+      "start": "PASS",
+      "replay": "PASS",
+      "fixedRubyAndPointer": "PASS"
+    },
+    {
+      "outcome": "Eternal",
+      "rotationDegrees": 1890,
+      "topSector": "Eternal",
+      "headerAndButton": "PASS",
+      "start": "PASS",
+      "replay": "PASS",
+      "fixedRubyAndPointer": "PASS"
+    }
+  ],
+  "inlineAssets": "PASS",
+  "doubleClickGuard": "PASS",
+  "keyboard": "PASS",
+  "invalidOutcomeRejected": "PASS",
+  "browserCompatibility": "NOT_VERIFIED: previous local Chromium and cloud file URL restrictions remain",
+  "tools": [
+    "Canvas",
+    "FFmpeg",
+    "Node.js"
+  ]
+}

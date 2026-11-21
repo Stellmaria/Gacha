@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Velvet · Все исходы колеса</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#080406;color:#e7c6ae;font-family:Georgia,serif}
+body{display:flex;flex-direction:column;align-items:center;min-height:100dvh;padding:8px}
+canvas{display:block;max-width:100%;width:min(65dvh,580px);height:auto;touch-action:manipulation;cursor:pointer;border-radius:3px}
+canvas:focus-visible,select:focus-visible{outline:2px solid #e2ad73;outline-offset:3px}
+.controls{display:flex;align-items:center;gap:10px;margin:10px 0 3px;font-size:14px}
+select{background:#1d0a10;color:#f8e4c9;border:1px solid #80503f;border-radius:6px;padding:7px 11px;font:inherit}
+select:disabled{opacity:.6}p{font:13px/1.5 Georgia,serif;letter-spacing:.02em;opacity:.8;margin:8px 0 12px;text-align:center;max-width:540px}
+</style>
+<canvas id="wheel" width="1086" height="1448" tabindex="0" role="button" aria-label="Крутить колесо"></canvas>
+<div class="controls"><label for="outcome">Исход для просмотра</label><select id="outcome" aria-label="Исход для просмотра"><option>Classic</option><option>Elite</option><option selected>Royal</option><option>Epic</option><option>Mythic</option><option>Eternal</option></select></div>
+<p id="hint" aria-live="polite">Выбери исход и нажми «Крутить»</p>
+<script>__ENGINE__</script>
+<script>const encoded=__ASSETS__;
+__VIEWER__</script>
+</html>

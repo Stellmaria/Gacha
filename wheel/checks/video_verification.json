@@ -1,0 +1,71 @@
+{
+  "videos": [
+    {
+      "outcome": "Classic",
+      "file": "Classic.mp4",
+      "decode": "PASS",
+      "duration_seconds": 10.4,
+      "width": 720,
+      "height": 960,
+      "fps": 30,
+      "bytes": 7091756,
+      "sha256": "a685d41307c7917df9e5c2097aa8e056f731d049b8041ac42843bcd7167d5b37"
+    },
+    {
+      "outcome": "Elite",
+      "file": "Elite.mp4",
+      "decode": "PASS",
+      "duration_seconds": 10.4,
+      "width": 720,
+      "height": 960,
+      "fps": 30,
+      "bytes": 7358708,
+      "sha256": "5142c1696ffd6c9d66e2c188d46ef4a4a7213f6b91ee7216b5b3d4daf2d9b0a3"
+    },
+    {
+      "outcome": "Royal",
+      "file": "Royal.mp4",
+      "decode": "PASS",
+      "duration_seconds": 10.4,
+      "width": 720,
+      "height": 960,
+      "fps": 30,
+      "bytes": 7277143,
+      "sha256": "91c02eb3944228c7ac45b4f6318469dab92ab9e8c6491f199f2ce11e70fde1a8"
+    },
+    {
+      "outcome": "Epic",
+      "file": "Epic.mp4",
+      "decode": "PASS",
+      "duration_seconds": 10.4,
+      "width": 720,
+      "height": 960,
+      "fps": 30,
+      "bytes": 7220195,
+      "sha256": "33a798a0a1ddb1d1c2285a2aa66f88a23e771575282c9fb142381871ffa4c2ee"
+    },
+    {
+      "outcome": "Mythic",
+      "file": "Mythic.mp4",
+      "decode": "PASS",
+      "duration_seconds": 10.4,
+      "width": 720,
+      "height": 960,
+      "fps": 30,
+      "bytes": 7177604,
+      "sha256": "0cca23dd9ad83e90d2b6d438e0178362ee550d3aa92e9aee1fa20ed96a0b9d40"
+    },
+    {
+      "outcome": "Eternal",
+      "file": "Eternal.mp4",
+      "decode": "PASS",
+      "duration_seconds": 10.4,
+      "width": 720,
+      "height": 960,
+      "fps": 30,
+      "bytes": 7105512,
+      "sha256": "7ef483bf0719424d48174479f65e35d2ff4b38527fb4470bdf1d786280c322dc"
+    }
+  ],
+  "existingRoyalPreservedByteForByte": true
+}
